@@ -1,0 +1,69 @@
+{
+    "extensions.experimental.affinity": {
+        "asvetliakov.vscode-neovim": 1
+    },
+
+    "workbench.colorTheme": "GitHub Dark",
+    
+    // --- tex ---
+    // 自動保存
+    // "files.autoSave": "afterDelay",
+    // ビルドコマンド
+    "latex-workshop.latex.tools": [
+        {
+            "name": "ptex2pdf",
+            "command": "ptex2pdf",
+            "args": [
+                "-interaction=nonstopmode",
+                "-l",
+                "-ot",
+                "-kanji=utf8 -synctex=1",
+                "%DOC%"
+            ]
+        },
+    ],
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "ptex2pdf*2",
+            "tools": [
+                "ptex2pdf",
+                "ptex2pdf",
+            ]
+        },
+    ],
+    // 自動ビルド  "onFIleChange", "never"
+    // "latex-workshop.latex.autoBuild.run": "never",
+
+    // ビルド失敗時に一時ファイルのクリーンアップを行うかどうか
+    // ビルド失敗時に生成された一時ファイルが悪影響を及ぼす事があるため、自動で
+    // クリーンアップがかかるようにしておく。
+    "latex-workshop.latex.autoClean.run": "onFailed",
+
+    // pdf viewerの開き方. 
+    // "tab" : 今開いているエディタを左右に分割し右側に生成されたPDFを表示
+    "latex-workshop.view.pdf.viewer": "tab",
+    "latex-workshop.latex.build.clearLog.everyRecipeStep.enabled": false,
+
+    // --- Markdown ---
+	"plantuml.includepaths": [
+        "C:\\Users\\okamo\\Dropbox\\Documents\\config_file\\uml"
+    ],
+
+    // --- その他 ---
+    "window.zoomLevel": 0,
+    "extensions.ignoreRecommendations": false,
+    "git.openRepositoryInParentFolders": "never",
+
+    "files.autoGuessEncoding": true,
+    "editor.minimap.enabled": false,
+
+    "zenMode.hideLineNumbers": false,
+    "search.showLineNumbers": true,
+    "editor.lineNumbers": "relative",
+    "breadcrumbs.enabled": false,
+
+    // to be tight of the line number column
+    //"editor.glyphMargin": false,
+    "editor.folding": false,
+    "chat.viewSessions.orientation": "stacked",
+}
