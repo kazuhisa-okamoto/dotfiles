@@ -18,21 +18,27 @@ function emacskey {
 
 $env:PATH = [Environment]::GetEnvironmentVariable("Path", "User") + ';' + [Environment]::GetEnvironmentVariable("Path", "Machine")
 
+# UTF-8
+[Console]::InputEncoding  = [System.Text.UTF8Encoding]::new()
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+# コードページ
+chcp 65001 | Out-Null
+
 # 補完適用
-if ($env:WT_SESSION) {
-    if (Get-Command Set-PSReadLineKeyHandler -ErrorAction SilentlyContinue) {
-        Set-PSReadLineKeyHandler -Chord "Ctrl+s" -Function AcceptNextSuggestionWord
-    }
+if (Get-Command Set-PSReadLineKeyHandler -ErrorAction SilentlyContinue) {
+    Set-PSReadLineKeyHandler -Chord "Ctrl+s" -Function AcceptNextSuggestionWord
 }
 
 # Oh My Posh
-$ErrorActionPreference = 'SilentlyContinue' # weztermで$profileを再読み込みした際のエラー無視
+$ErrorActionPreference = 'SilentlyContinue' # デフォルトpowershellのエラー無視
 oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\mytheme.omp.json" | Invoke-Expression
 $ErrorActionPreference = 'Continue'
 
 # lsコマンド
 function Get-DisplayWidth($s) {
     $w = 0
+    $s = [string]$s
     foreach ($ch in $s.ToCharArray()) {
         $w += if ([int][char]$ch -gt 255) { 2 } else { 1 }
     }
@@ -208,16 +214,8 @@ function Set-PsTabName {
 }
 
 Register-EngineEvent PowerShell.OnIdle -Action {
-    #if ($env:WT_SESSION) {
-        Set-PsTabName
-    #}
-} | Out-Null
-
-function nvim() {
-    $Host.UI.RawUI.WindowTitle = "Neovim"
-    & "nvim.exe" $args
     Set-PsTabName
-}
+} | Out-Null
 
 function python2() {
     $python2path = "C:\Python27\python.exe"
@@ -234,7 +232,7 @@ Invoke-Expression (& {zoxide init powershell | Out-String})
 
 # fd
 # fzf のデフォルトコマンドを fd に変更 (ファイル検索用)
-$fdExclude = @() # fd検索で除外するフォルダ
+$fdExclude = @(".git/", ".hg/") # fd検索で除外するフォルダ
 # 配列と文字列の両方を用意する。
 # - $fdExcludeArgs: コマンド実行時に配列展開して渡す用途
 # - $fdExcludeOption: 環境変数のコマンド文字列用
@@ -243,6 +241,7 @@ $fdExcludeOption = $fdExcludeArgs -join " "
 $env:FZF_DEFAULT_COMMAND = "fd --type f --strip-cwd-prefix --hidden $fdExcludeOption"
 # CTRL-T (ファイル検索) 用の設定
 $env:FZF_CTRL_T_COMMAND = $env:FZF_DEFAULT_COMMAND
+$env:FZF_DEFAULT_OPTS = "--exact"
 
 # fzfコマンド
 # ヒストリー実行
@@ -294,7 +293,6 @@ function fcode {
 function fvim {
     param([string]$query)
     @(
-        $mydirs
         fd --type f --hidden $fdExcludeArgs . $mydirs
     ) | fzf --query="$query" --header "Open with Neovim" --no-sort | ForEach-Object { nvim $_ }
 }

@@ -9,11 +9,13 @@ config.font = wezterm.font_with_fallback({
 })
 config.font_size = 12.0
 config.use_ime = true
-config.window_background_opacity = 1
+config.window_background_opacity = 0.85
 config.macos_window_background_blur = 20
 config.default_prog = {
-  "powershell.exe"
+  "pwsh.exe"
 }
+
+config.window_close_confirmation = "NeverPrompt"
 
 ----------------------------------------------------
 -- Tab
@@ -81,6 +83,6 @@ end)
 config.disable_default_key_bindings = true
 config.keys = require("keybinds").keys
 config.key_tables = require("keybinds").key_tables
-config.leader = { key = "q", mods = "CTRL", timeout_milliseconds = 2000 }
+config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 2000 }
 
 return config

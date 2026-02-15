@@ -14,7 +14,7 @@ return {
   keys = {
     {
       -- workspaceの切り替え
-      key = "w",
+      key = "s",
       mods = "LEADER",
       action = act.ShowLauncherArgs({ flags = "WORKSPACES", title = "Select workspace" }),
     },
@@ -32,8 +32,8 @@ return {
       }),
     },
     {
-      key = "W",
-      mods = "LEADER|SHIFT",
+      key = "n",
+      mods = "LEADER",
       action = act.PromptInputLine({
         description = "(wezterm) Create new workspace:",
         action = wezterm.action_callback(function(window, pane, line)
@@ -48,33 +48,28 @@ return {
         end),
       }),
     },
-    -- コマンドパレット表示
-    { key = "p", mods = "SUPER", action = act.ActivateCommandPalette },
-
     -- Debug Overlay / REPL を開く
-    { key = "L", mods = "LEADER", action = act.ShowDebugOverlay },
+    { key = "L", mods = "LEADER|SHIFT", action = act.ShowDebugOverlay },
 
     -- Tab移動
     { key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
     { key = "Tab", mods = "SHIFT|CTRL", action = act.ActivateTabRelative(-1) },
     -- Tab入れ替え
-    { key = "{", mods = "LEADER", action = act({ MoveTabRelative = -1 }) },
+    { key = "h", mods = "LEADER|SHIFT", action = act({ MoveTabRelative = -1 }) },
+    { key = "l", mods = "LEADER|SHIFT", action = act({ MoveTabRelative = 1 }) },
     -- Tab新規作成
     { key = "t", mods = "LEADER", action = act({ SpawnTab = "CurrentPaneDomain" }) },
     -- Tabを閉じる
     { key = "w", mods = "LEADER", action = act({ CloseCurrentTab = { confirm = true } }) },
-    { key = "}", mods = "LEADER", action = act({ MoveTabRelative = 1 }) },
 
     -- 画面フルスクリーン切り替え
     { key = "Enter", mods = "ALT", action = act.ToggleFullScreen },
 
     -- コピーモード
-    -- { key = 'X', mods = 'LEADER', action = act.ActivateKeyTable{ name = 'copy_mode', one_shot =false }, },
     { key = "[", mods = "LEADER", action = act.ActivateCopyMode },
-    -- コピー
-    { key = "c", mods = "SUPER", action = act.CopyTo("Clipboard") },
-    -- 貼り付け
-    { key = "v", mods = "SUPER", action = act.PasteFrom("Clipboard") },
+    -- コピ, 貼り付け
+    { key = "c", mods = "SHIFT|CTRL", action = act.CopyTo("Clipboard") },
+    { key = "v", mods = "SHIFT|CTRL", action = act.PasteFrom("Clipboard") },
 
     -- Pane作成 leader + r or d
     { key = "d", mods = "LEADER", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
@@ -98,22 +93,23 @@ return {
     { key = "0", mods = "CTRL", action = act.ResetFontSize },
 
     -- タブ切替 Cmd + 数字
-    { key = "1", mods = "SUPER", action = act.ActivateTab(0) },
-    { key = "2", mods = "SUPER", action = act.ActivateTab(1) },
-    { key = "3", mods = "SUPER", action = act.ActivateTab(2) },
-    { key = "4", mods = "SUPER", action = act.ActivateTab(3) },
-    { key = "5", mods = "SUPER", action = act.ActivateTab(4) },
-    { key = "6", mods = "SUPER", action = act.ActivateTab(5) },
-    { key = "7", mods = "SUPER", action = act.ActivateTab(6) },
-    { key = "8", mods = "SUPER", action = act.ActivateTab(7) },
-    { key = "9", mods = "SUPER", action = act.ActivateTab(-1) },
+    { key = "1", mods = "LEADER", action = act.ActivateTab(0) },
+    { key = "2", mods = "LEADER", action = act.ActivateTab(1) },
+    { key = "3", mods = "LEADER", action = act.ActivateTab(2) },
+    { key = "4", mods = "LEADER", action = act.ActivateTab(3) },
+    { key = "5", mods = "LEADER", action = act.ActivateTab(4) },
+    { key = "6", mods = "LEADER", action = act.ActivateTab(5) },
+    { key = "7", mods = "LEADER", action = act.ActivateTab(6) },
+    { key = "8", mods = "LEADER", action = act.ActivateTab(7) },
+    { key = "9", mods = "LEADER", action = act.ActivateTab(-1) },
 
     -- コマンドパレット
     { key = "p", mods = "SHIFT|CTRL", action = act.ActivateCommandPalette },
+
     -- 設定再読み込み
     { key = "r", mods = "SHIFT|CTRL", action = act.ReloadConfiguration },
     -- キーテーブル用
-    { key = "s", mods = "LEADER", action = act.ActivateKeyTable({ name = "resize_pane", one_shot = false }) },
+    { key = "p", mods = "LEADER", action = act.ActivateKeyTable({ name = "resize_pane", one_shot = false }) },
     {
       key = "a",
       mods = "LEADER",

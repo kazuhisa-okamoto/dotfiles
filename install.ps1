@@ -39,6 +39,10 @@ $links = @(
         target = "$homedir\AppData\Local\nvim\init.lua"
     },
     @{
+        source = "nvim\lua"
+        target = "$homedir\AppData\Local\nvim\lua"
+    },
+    @{
         source = "vscode\settings.json"
         target = "$homedir\AppData\Roaming\Code\User\settings.json"
     },
@@ -110,7 +114,7 @@ function New-SymbolicLinkSafe {
     }
 
     New-DirectoryIfMissing $target
-    Backup-ExistingPath   $target
+    Backup-ExistingPath $target
 
     if (Test-Path $target) {
         $item = Get-Item $target -ErrorAction SilentlyContinue
