@@ -17,6 +17,13 @@ config.default_prog = {
 
 config.window_close_confirmation = "NeverPrompt"
 
+-- カラーテーマ
+config.color_scheme = "Tokyo Night"
+-- 背景色
+config.window_background_gradient = {
+  colors = { "#1a1b26" },
+}
+
 ----------------------------------------------------
 -- Tab
 ----------------------------------------------------
@@ -34,11 +41,6 @@ config.show_tabs_in_tab_bar = true
 config.window_frame = {
   inactive_titlebar_bg = "none",
   active_titlebar_bg = "none",
-}
-
--- タブバーを背景色に合わせる
-config.window_background_gradient = {
-  colors = { "#000000" },
 }
 
 -- タブ同士の境界線を非表示

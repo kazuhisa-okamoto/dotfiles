@@ -62,6 +62,10 @@ $links = @(
         source = "powershell\Microsoft.PowerShell_profile.ps1"
         target = "$profile"
     }
+    @{
+        source = "oh_my_posh\mytheme.omp.json"
+        target = "$env:POSH_THEMES_PATH\mythme.omp.json"
+    }
 )
 
 #================================

@@ -1,9 +1,10 @@
 # 変数定義 
 $notedir = "$env:USERPROFILE\Dropbox\Documents\note"
 $mydirs = @(
-    $notedir,
-    "$env:USERPROFILE\Dropbox\code",
+    $notedir
+    "$env:USERPROFILE\Dropbox\code"
     "$env:USERPROFILE\dotfiles"
+    "$env:USERPROFILE\src"
 )
 
 # Use emacs keybinding in commandline
@@ -14,6 +15,8 @@ function emacskey {
     Write-Host "C-f, C-b: Forward/Backward one character."
     Write-Host "C-a, C-e: Beginning/End of line."
     Write-Host "M-f, M-b: Forward/Backward one word."
+    Write-Host "C-d, C-h: Delete one character before/after the cursor."
+    Write-Host "C-w, M-d: Delete one word before/after the cursor."
 }
 
 $env:PATH = [Environment]::GetEnvironmentVariable("Path", "User") + ';' + [Environment]::GetEnvironmentVariable("Path", "Machine")
@@ -132,6 +135,12 @@ function ls {
         }
         Write-Host ""
     }
+}
+
+# tablacus
+function te {
+    param([string]$path = ".")
+    & "C:\Program Files\te250907\te64.exe" (Resolve-Path $path)
 }
 
 # Fork
@@ -261,6 +270,7 @@ function fcd {
         $mydirs
         fd --type d --hidden --absolute-path $fdExcludeArgs . $mydirs
     ) | fzf --query="$query" --header "Move to Directory" --no-sort | ForEach-Object { Set-Location $_ }
+    ls
 }
 
 # .gitがあるディレクトリへ移動
