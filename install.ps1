@@ -64,7 +64,7 @@ $links = @(
     }
     @{
         source = "oh_my_posh\mytheme.omp.json"
-        target = "$env:POSH_THEMES_PATH\mythme.omp.json"
+        target = "$env:POSH_THEMES_PATH\mytheme.omp.json"
     }
 )
 
