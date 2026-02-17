@@ -26,11 +26,13 @@ vim.opt.expandtab = true   -- タブをスペースに変換
 --  (IME制御: zenhan.exe)
 local im_select_group = vim.api.nvim_create_augroup("IMSelect", { clear = true })
 
+local home = vim.fn.expand("~")
+local zenhan = vim.fs.joinpath(home, "bin", "zenhan.exe")
 vim.api.nvim_create_autocmd({ "InsertLeave", "CmdlineLeave" }, {
   group = im_select_group,
   pattern = "*",
   callback = function()
-    vim.fn.system([[C:\Users\okamo\bin\zenhan.exe 0]])
+    vim.fn.system({ zenhan, "0" })
   end,
 })
 

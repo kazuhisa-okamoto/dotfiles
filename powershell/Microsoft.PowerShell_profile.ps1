@@ -3,7 +3,6 @@ $notedir = "$env:USERPROFILE\Dropbox\Documents\note"
 $mydirs = @(
     $notedir
     "$env:USERPROFILE\Dropbox\code"
-    "$env:USERPROFILE\dotfiles"
     "$env:USERPROFILE\src"
 )
 
