@@ -7,38 +7,41 @@
         {
           "background": "#91ddff",
           "foreground": "#100e23",
-          "powerline_symbol": "\ue0b0",
+          "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": "\ue0b0",
           "options": {
             "folder_icon": "\uf115",
             "folder_separator_icon": " \ue0b1 ",
-            "home_icon": "\ueb06",
-            "style": "agnoster"
+            "style": "full"
           },
-          "style": "powerline",
           "template": " {{ .Path }} ",
           "type": "path"
-        },
+        }, 
         {
           "background": "#95ffa4",
           "foreground": "#193549",
-          "powerline_symbol": "\ue0b0",
-          "style": "powerline",
+          "leading_diamond": "",
+          "trailing_diamond": "\ue0b0",
+          "style": "diamond",
           "template": " {{ .HEAD }} ",
           "type": "git"
         },
         {
           "background": "#906cff",
           "foreground": "#100e23",
-          "powerline_symbol": "\ue0b0",
-          "style": "powerline",
+          "leading_diamond": "",
+          "trailing_diamond": "\ue0b0",
+          "style": "diamond",
           "template": " \ue235 {{ if .Error }}{{ .Error }}{{ else }}{{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}{{ end }} ",
           "type": "python"
         },
         {
           "background": "#ff8080",
           "foreground": "#ffffff",
-          "powerline_symbol": "\ue0b0",
-          "style": "powerline",
+          "leading_diamond": "",
+          "trailing_diamond": "\ue0b0",
+          "style": "diamond",
           "template": " {{ reason .Code }} ",
           "type": "status"
         }

@@ -15,6 +15,8 @@ config.default_prog = {
   "pwsh.exe"
 }
 
+config.default_cursor_style = "SteadyBlock"
+
 config.window_close_confirmation = "NeverPrompt"
 
 -- カラーテーマ
@@ -32,7 +34,7 @@ config.window_decorations = "RESIZE"
 -- タブバーの表示
 config.show_tabs_in_tab_bar = true
 -- タブが一つの時は非表示
--- config.hide_tab_bar_if_only_one_tab = true
+config.hide_tab_bar_if_only_one_tab = true
 
 -- falseにするとタブバーの透過が効かなくなる
 -- config.use_fancy_tab_bar = false
