@@ -37,6 +37,18 @@ $ErrorActionPreference = 'SilentlyContinue' # デフォルトpowershellのエラ
 oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\mytheme.omp.json" | Invoke-Expression
 $ErrorActionPreference = 'Continue'
 
+# 既存の Set-Location をラップ
+function Set-Location {
+    param(
+        [Parameter(Position=0)]
+        [string]$Path
+    )
+
+    Microsoft.PowerShell.Management\Set-Location @PSBoundParameters
+    Send-TerminalCwd
+    ls
+}
+
 # lsコマンド
 function Get-DisplayWidth($s) {
     $w = 0
@@ -56,18 +68,20 @@ function Format-DisplayRight($s, $width) {
 }
 Remove-Item Alias:ls -Force -ErrorAction SilentlyContinue
 function ls {
-    $show_all = $false
-    $detail   = $false
+    param(
+        [Parameter(Position=0)]
+        [string]$Path = ".",
+        [switch]$a,
+        [switch]$l
+    )
 
-    foreach ($arg in $args) {
-        if ($arg -match "a") { $show_all = $true }
-        if ($arg -match "l") { $detail   = $true }
-    }
+    $show_all = $a.IsPresent
+    $detail   = $l.IsPresent
 
     $items = if ($show_all) {
-        Get-ChildItem -Force
+        Get-ChildItem -Path $Path -Force
     } else {
-        Get-ChildItem
+        Get-ChildItem -Path $Path
     }
 
     # 詳細表示
@@ -139,7 +153,12 @@ function ls {
 # tablacus
 function te {
     param([string]$path = ".")
-    & "C:\Program Files\te250907\te64.exe" (Resolve-Path $path)
+    $tablacus = "C:\Program Files\te250907\te64.exe"
+    if (Test-Path $tablacus) {
+        & $tablacus (Resolve-Path $path)
+    } else {
+        Write-Host "$tablacus is not found"
+    }
 }
 
 # Fork
@@ -221,16 +240,19 @@ function Set-PsTabName {
     $host.UI.RawUI.WindowTitle = $dir
 }
 
-Register-EngineEvent PowerShell.OnIdle -Action {
+function Send-TerminalCwd {
+    $cwd = (Get-Location).ProviderPath
+    $esc = [char]27
+    $Host.UI.Write("$esc]7;file://localhost/$cwd$esc\")
     Set-PsTabName
-} | Out-Null
+}
 
 function python2() {
     $python2path = "C:\Python27\python.exe"
     if (Test-Path $python2path) {
     	& $python2path $args
     } else {
-	Write-Host "python2 is not found"
+	    Write-Host "$python2path is not found"
     }
 }
 
@@ -251,6 +273,21 @@ $env:FZF_DEFAULT_COMMAND = "fd --type f --strip-cwd-prefix --hidden $fdExcludeOp
 $env:FZF_CTRL_T_COMMAND = $env:FZF_DEFAULT_COMMAND
 $env:FZF_DEFAULT_OPTS = "--exact"
 
+# 関数引数で渡されるパスの解釈
+function Resolve-PathArg($default, $path) {
+    if ($path) {
+        $resolved = Resolve-Path $path -ErrorAction SilentlyContinue
+        if (-not $resolved) {
+            Write-Host "Path not found: $path"
+            return
+        }
+        $ret = @($resolved.Path)
+    } else {
+        $ret = $default
+    }
+    return $ret
+}
+
 # fzfコマンド
 # ヒストリー実行
 function fhis {
@@ -264,71 +301,102 @@ function fhis {
 
 # 選択ディレクトリへ移動
 function fcd {
-    param([string]$query)
-    @(
-        $mydirs
-        fd --type d --hidden --absolute-path $fdExcludeArgs . $mydirs
-    ) | fzf --query="$query" --header "Move to Directory" --no-sort | ForEach-Object { Set-Location $_ }
-    ls
+    param(
+        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Query
+    )
+
+    $roots = Resolve-PathArg $mydirs $Path
+
+    $fdResults = fd . --type d --hidden --absolute-path $fdExcludeArgs $roots
+
+    $selected = $fdResults | fzf --query="$Query" --header "Move to Directory" --no-sort
+    if ($selected) { Set-Location $selected }
 }
 
 # .gitがあるディレクトリへ移動
 function fcdg {
-    param([string]$query)
-    fd --hidden --fixed-strings ".git" $mydirs --type d --max-depth 5 |
-        ForEach-Object { Split-Path $_ -Parent } |
-        fzf --query="$query" --header "Move to Git Repository" --no-sort |
-        ForEach-Object { Set-Location $_ }
+    param(
+        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Query
+    )
+    $roots = Resolve-PathArg $mydirs $Path
+    $repos = fd .git $roots --hidden --type d --max-depth 5 |
+         ForEach-Object { Split-Path $_ -Parent } |
+         Sort-Object -Unique
+    $selected = $repos | fzf --query="$Query" --header "Move to Git Repository" --no-sort
+    if ($selected) { Set-Location $selected }
 }
 
 # VS Codeで開く. 引数でファイル(-f)/ディレクトリ(-d)を指定.
 function fcode {
-    $query = ""
-    $type = "d"
-    foreach ($arg in $args) {
-        if ($arg -eq "-f") { $type = "f" }
-        elseif ($arg -eq "-d") { $type = "d" }
-        elseif ($arg -match "^-") { }
-        else { $query += $arg }
-    }
+    param(
+        [Alias('p')][string]$Path,
+        [switch]$f,
+        [switch]$d,
+        [Parameter(Position=0)][string]$Query
+    )
 
-    @(
-        $mydirs
-        fd --type $type --hidden --absolute-path $fdExcludeArgs . $mydirs
-    ) | fzf --query="$query" --header "Open with VS Code ($type)" --no-sort | ForEach-Object { code $_ }
+    $type = "d"
+    if ($f) { $type = "f" } elseif ($d) { $type = "d" }
+
+    $roots = Resolve-PathArg $mydirs $Path
+    $fdResults = fd . --type $type --hidden --absolute-path $fdExcludeArgs $roots
+    $selected = $fdResults | fzf --query="$Query" --header "Open with VS Code ($type)" --no-sort
+    if ($selected) { code $selected }
 }
 
 # Neovimで開く
 function fvim {
-    param([string]$query)
-    @(
-        fd --type f --hidden $fdExcludeArgs . $mydirs
-    ) | fzf --query="$query" --header "Open with Neovim" --no-sort | ForEach-Object { nvim $_ }
+    param(
+        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Query
+    )
+    $roots = Resolve-PathArg $mydirs $Path
+    $fdResults = fd . --type f --hidden $fdExcludeArgs $roots
+    $fdResults |
+        fzf --query="$Query" --header "Open with Neovim" --no-sort |
+        ForEach-Object { nvim $_ }
 }
 
 # メモディレクトリをvscodeで開く
 function fcodememo {
-    param([string]$query)
-    @(
-        $notedir
-        fd --type f $fdExcludeArgs . $notedir
-    ) | fzf --query="$query" --header "Open Memo (VS Code)" --no-sort | ForEach-Object { code $_ }
+    param(
+        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Query
+    )
+    $roots = Resolve-PathArg $notedir $Path
+    $fdResults = fd . --type f $fdExcludeArgs $roots
+    $fdResults |
+        fzf --query="$Query" --header "Open Memo (VS Code)" --no-sort |
+        ForEach-Object { code $_ }
 }
 
 # メモディレクトリをNeovimで開く
 function fvimmemo {
-    param([string]$query)
-    @(
-        $notedir
-        fd --type f $fdExcludeArgs . $notedir
-    ) | fzf --query="$query" --header "Open Memo (Neovim)" --no-sort | ForEach-Object { nvim $_ }
+    param(
+        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Query
+    )
+    $roots = Resolve-PathArg $notedir $Path
+    $fdResults = fd . --type f $fdExcludeArgs $roots
+    $fdResults |
+        fzf --query="$Query" --header "Open Memo (Neovim)" --no-sort |
+        ForEach-Object { nvim $_ }
 }
 
 # リポジトリをVS Codeで開く
 function fcodeg {
-    param([string]$query)
-    fd --hidden --fixed-strings ".git" $mydirs --type d --max-depth 5 |
-        ForEach-Object { Split-Path $_ -Parent } |
-        fzf --query="$query" --header "Open Repository (VS Code)" --no-sort |
+    param(
+        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Query
+    )
+    $roots = Resolve-PathArg $mydirs $Path
+    $repos = fd . --hidden --fixed-strings ".git" $roots --type d --max-depth 5 |
+        ForEach-Object { Split-Path $_ -Parent }
+    $repos |
+        fzf --query="$Query" --header "Open Repository (VS Code)" --no-sort |
         ForEach-Object { code $_ }
 }
+
+Send-TerminalCwd
