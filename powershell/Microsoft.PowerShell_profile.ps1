@@ -220,8 +220,9 @@ function stree($filedirpath) {
     }
 }
 
-# lazygit
 Set-Alias -Name lg -Value lazygit
+Set-Alias vim nvim
+Set-Alias vi nvim
 
 # yazi
 function y {
@@ -308,9 +309,9 @@ function fcd {
 
     $roots = Resolve-PathArg $mydirs $Path
 
-    $fdResults = fd . --type d --hidden --absolute-path $fdExcludeArgs $roots
+    $targets = fd . --type d --hidden --absolute-path $fdExcludeArgs $roots
 
-    $selected = $fdResults | fzf --query="$Query" --header "Move to Directory" --no-sort
+    $selected = $mydirs + $targets | fzf --query="$Query" --header "Move to Directory" --no-sort
     if ($selected) { Set-Location $selected }
 }
 
@@ -338,16 +339,18 @@ function fcode {
     )
 
     $type = "d"
-    if ($f) { $type = "f" } elseif ($d) { $type = "d" }
+    if ($f) { $type = "f" }
 
     $roots = Resolve-PathArg $mydirs $Path
-    $fdResults = fd . --type $type --hidden --absolute-path $fdExcludeArgs $roots
-    $selected = $fdResults | fzf --query="$Query" --header "Open with VS Code ($type)" --no-sort
+    $targets = fd . --type $type --hidden --absolute-path $fdExcludeArgs $roots
+    if ($type -eq "d") { $targets = $mydirs + $targets }
+
+    $selected = $targets | fzf --query="$Query" --header "Open with VS Code ($type)" --no-sort
     if ($selected) { code $selected }
 }
 
 # Neovimで開く
-function fvim {
+function fvi {
     param(
         [Alias('p')][string]$Path,
         [Parameter(Position=0)][string]$Query
@@ -359,7 +362,7 @@ function fvim {
         ForEach-Object { nvim $_ }
 }
 
-# メモディレクトリをvscodeで開く
+# メモをvscodeで開く
 function fcodememo {
     param(
         [Alias('p')][string]$Path,
@@ -372,8 +375,8 @@ function fcodememo {
         ForEach-Object { code $_ }
 }
 
-# メモディレクトリをNeovimで開く
-function fvimmemo {
+# メモをNeovimで開く
+function fvimemo {
     param(
         [Alias('p')][string]$Path,
         [Parameter(Position=0)][string]$Query
@@ -399,4 +402,64 @@ function fcodeg {
         ForEach-Object { code $_ }
 }
 
+# ripgrep
+# ファイルを検索し, 選択したファイル, 行番号を@(ファイル, 行番号)として返す
+function rgf {
+    param(
+        [Alias('p')]
+        [string]$Path = ".",
+
+        [Parameter(Position = 0)]
+        [string]$Query
+    )
+
+    $selected = rg --line-number --column --color=always --smart-case . $Path | 
+        fzf --ansi `
+            --query "$Query" `
+            --delimiter ':' `
+            --preview 'bat --color=always --highlight-line {2} {1}' `
+            --preview-window 'right:60%:wrap'
+
+    if ($selected) {
+        $parts = $selected.Split(":")
+        return @($parts[0], [int]$parts[1])
+    }
+    return @("", 0)
+}
+
+# ripgrepの結果をnvimで開く
+function rgvi {
+    param(
+        [Alias('p')]
+        [string]$Path = ".",
+
+        [Parameter(Position = 0)]
+        [string]$Query
+    )
+
+    $file, $line = rgf -p $Path $Query
+
+    if (Test-Path $file) {
+        nvim "+$line" -- $file
+    }
+}
+
+# ripgrepの結果をvscodeで開く
+function rgcode {
+    param(
+        [Alias('p')]
+        [string]$Path = ".",
+
+        [Parameter(Position = 0)]
+        [string]$Query
+    )
+
+    $file, $line = rgf -p $Path $Query
+
+    if (Test-Path $file) {
+        code -g "${file}:${line}"
+    }
+}
+
 Send-TerminalCwd
+

@@ -139,5 +139,28 @@
         "key": "ctrl+o",
         "command": "-workbench.action.files.openFile",
         "when": "true"
+    },
+    
+
+    // 定義へ移動, 宣言へ移動, 実装へ移動, 参照へ移動
+    {
+        "command": "editor.action.revealDefinition",
+        "key": "g d",
+        "when": "neovim.mode == 'normal'"
+    },
+    {
+        "command": "editor.action.revealDeclaration",
+        "key": "g shift+d", 
+        "when": "neovim.mode == 'normal'"
+    },
+    {
+        "command": "editor.action.goToImplementation",
+        "key": "g i",
+        "when": "neovim.mode == 'normal'"
+    },
+    {
+        "command": "editor.action.goToReferences",
+        "key": "g r",
+        "when": "neovim.mode == 'normal'"
     }
 ]
