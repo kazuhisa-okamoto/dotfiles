@@ -1,0 +1,13 @@
+[opener]
+open_nvim = [
+	{ run = 'nvim "%s"', block = true, desc = "Open in Neovim", for = "windows" }
+]
+
+open_vscode = [
+	{ run = 'code "%s"', orphan = true, desc = "Open in VSCode", for = "windows" }
+]
+
+[open]
+rules = [
+    { url = "*", use = [ "open_nvim", "open_vscode" ] }
+]

@@ -66,4 +66,5 @@
     //"editor.glyphMargin": false,
     "editor.folding": false,
     "chat.viewSessions.orientation": "stacked",
+    "editor.fontFamily": "'JetBrainsMono NF', Consolas, 'Courier New', monospace",
 }

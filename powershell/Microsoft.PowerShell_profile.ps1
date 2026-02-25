@@ -229,7 +229,7 @@ function y {
 	$tmp = (New-TemporaryFile).FullName
 	yazi.exe $args --cwd-file="$tmp"
 	$cwd = Get-Content -Path $tmp -Encoding UTF8
-	if ($cwd -ne $PWD.Path -and (Test-Path -LiteralPath $cwd -PathType Container)) {
+	if ($cwd -ne $PWD.Path -and (Test-Path L$cwd -PathType Container)) {
 		Set-Location -LiteralPath (Resolve-Path -LiteralPath $cwd).Path
 	}
 	Remove-Item -Path $tmp
@@ -309,9 +309,12 @@ function fcd {
 
     $roots = Resolve-PathArg $mydirs $Path
 
-    $targets = fd . --type d --hidden --absolute-path $fdExcludeArgs $roots
+    # fd の出力をパイプで直接 fzf に渡す(fdが走っている途中からfzfを動かせる)
+    $selected = & {
+        $mydirs
+        fd . $roots --type d --hidden --absolute-path $fdExcludeArgs
+    } | fzf --query="$Query" --header "Move to Directory" --no-sort
 
-    $selected = $mydirs + $targets | fzf --query="$Query" --header "Move to Directory" --no-sort
     if ($selected) { Set-Location $selected }
 }
 
@@ -322,10 +325,12 @@ function fcdg {
         [Parameter(Position=0)][string]$Query
     )
     $roots = Resolve-PathArg $mydirs $Path
+
     $repos = fd .git $roots --hidden --type d --max-depth 5 |
          ForEach-Object { Split-Path $_ -Parent } |
-         Sort-Object -Unique
-    $selected = $repos | fzf --query="$Query" --header "Move to Git Repository" --no-sort
+         Sort-Object
+    $selected = $repos |
+        fzf --query="$Query" --header "Move to Git Repository" --no-sort
     if ($selected) { Set-Location $selected }
 }
 
@@ -334,18 +339,23 @@ function fcode {
     param(
         [Alias('p')][string]$Path,
         [switch]$f,
-        [switch]$d,
+        [switch]$d, # -d はデフォルト（ディレクトリ）
         [Parameter(Position=0)][string]$Query
     )
 
-    $type = "d"
-    if ($f) { $type = "f" }
-
+    # タイプの決定
+    $type = if ($f) { "f" } else { "d" }
     $roots = Resolve-PathArg $mydirs $Path
-    $targets = fd . --type $type --hidden --absolute-path $fdExcludeArgs $roots
-    if ($type -eq "d") { $targets = $mydirs + $targets }
 
-    $selected = $targets | fzf --query="$Query" --header "Open with VS Code ($type)" --no-sort
+    # fd の結果をリアルタイムに fzf へ流し込む
+    $selected = & {
+        # ディレクトリモードならお気に入り ($mydirs) を最優先で流す
+        if ($type -eq "d") { $mydirs }
+        
+        # fd を実行。--absolute-path は維持しつつ、ストリーム出力
+        fd . --type $type --hidden --absolute-path $fdExcludeArgs $roots
+    } | fzf --query="$Query" --header "Open with VS Code ($type)" --no-sort --no-select-1
+
     if ($selected) { code $selected }
 }
 
@@ -356,10 +366,14 @@ function fvi {
         [Parameter(Position=0)][string]$Query
     )
     $roots = Resolve-PathArg $mydirs $Path
-    $fdResults = fd . --type f --hidden $fdExcludeArgs $roots
-    $fdResults |
-        fzf --query="$Query" --header "Open with Neovim" --no-sort |
-        ForEach-Object { nvim $_ }
+
+    $selected = & {
+        fd . $roots --type f --hidden $fdExcludeArgs
+    } | fzf --query="$Query" --header "Open with Neovim" --no-sort --multi
+
+    if ($selected) {
+        nvim $selected
+    }
 }
 
 # メモをvscodeで開く
@@ -369,10 +383,12 @@ function fcodememo {
         [Parameter(Position=0)][string]$Query
     )
     $roots = Resolve-PathArg $notedir $Path
-    $fdResults = fd . --type f $fdExcludeArgs $roots
-    $fdResults |
-        fzf --query="$Query" --header "Open Memo (VS Code)" --no-sort |
-        ForEach-Object { code $_ }
+    
+    $selected = & {
+        fd . $roots --type f $fdExcludeArgs
+    } | fzf --query="$Query" --header "Open Memo (VS Code)" --no-sort --multi
+
+    if ($selected) { code $selected }
 }
 
 # メモをNeovimで開く
@@ -382,10 +398,12 @@ function fvimemo {
         [Parameter(Position=0)][string]$Query
     )
     $roots = Resolve-PathArg $notedir $Path
-    $fdResults = fd . --type f $fdExcludeArgs $roots
-    $fdResults |
-        fzf --query="$Query" --header "Open Memo (Neovim)" --no-sort |
-        ForEach-Object { nvim $_ }
+    
+    $selected = & {
+        fd . $roots --type f $fdExcludeArgs
+    } | fzf --query="$Query" --header "Open Memo (Neovim)" --no-sort --multi
+
+    if ($selected) { nvim $selected }
 }
 
 # リポジトリをVS Codeで開く

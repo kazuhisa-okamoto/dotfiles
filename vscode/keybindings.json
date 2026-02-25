@@ -144,23 +144,65 @@
 
     // 定義へ移動, 宣言へ移動, 実装へ移動, 参照へ移動
     {
+        "key": "ctrl+g d",
         "command": "editor.action.revealDefinition",
-        "key": "g d",
-        "when": "neovim.mode == 'normal'"
+        "when": "editorTextFocus && neovim.mode == 'normal' && !yazi.active"
     },
     {
+        "key": "ctrl+g ctrl+d", 
         "command": "editor.action.revealDeclaration",
-        "key": "g shift+d", 
-        "when": "neovim.mode == 'normal'"
+        "when": "editorTextFocus && neovim.mode == 'normal'"
     },
     {
+        "key": "ctrl+g i",
         "command": "editor.action.goToImplementation",
-        "key": "g i",
-        "when": "neovim.mode == 'normal'"
+        "when": "editorTextFocus && neovim.mode == 'normal'"
     },
     {
+        "key": "ctrl+g r",
         "command": "editor.action.goToReferences",
-        "key": "g r",
-        "when": "neovim.mode == 'normal'"
+        "when": "editorTextFocus && neovim.mode == 'normal'"
+    },
+    
+    // ターミナルをエディタペインで開く
+    {
+        "key": "ctrl+t", 
+        "command": "workbench.action.createTerminalEditor"
+    },
+    // ターミナルペインでvimのウィンドウ移動と同じキーでエディタペインに移動できるようにする
+    {
+        "key": "ctrl+w w",
+        "command": "workbench.action.focusNextGroup",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+w ctrl+w",
+        "command": "workbench.action.focusNextGroup",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+w h",
+        "command": "workbench.action.focusPreviousGroup",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+w l",
+        "command": "workbench.action.focusNextGroup",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+w j",
+        "command": "workbench.action.focusBelowGroup",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+w k",
+        "command": "workbench.action.focusAboveGroup",
+        "when": "terminalFocus"
+    },
+    {
+      "key": "ctrl+w q",
+      "command": "workbench.action.closeActiveEditor",
+      "when": "!editorTextFocus && !filesExplorerFocus && !searchViewletFocus && neovim.mode != 'cmdline'"
     }
 ]

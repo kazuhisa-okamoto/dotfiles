@@ -19,24 +19,6 @@
           "type": "path"
         }, 
         {
-          "background": "#95ffa4",
-          "foreground": "#193549",
-          "leading_diamond": "",
-          "trailing_diamond": "\ue0b0",
-          "style": "diamond",
-          "template": " {{ .HEAD }} ",
-          "type": "git"
-        },
-        {
-          "background": "#906cff",
-          "foreground": "#100e23",
-          "leading_diamond": "",
-          "trailing_diamond": "\ue0b0",
-          "style": "diamond",
-          "template": " \ue235 {{ if .Error }}{{ .Error }}{{ else }}{{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}{{ end }} ",
-          "type": "python"
-        },
-        {
           "background": "#ff8080",
           "foreground": "#ffffff",
           "leading_diamond": "",

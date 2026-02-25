@@ -66,6 +66,22 @@ $links = @(
         source = "oh_my_posh\mytheme.omp.json"
         target = "$env:POSH_THEMES_PATH\mytheme.omp.json"
     }
+    @{
+        source = "yazi\init.lua"
+        target = "$homedir\AppData\Roaming\yazi\config"
+    }
+    @{
+        source = "yazi\keymap.toml"
+        target = "$homedir\AppData\Roaming\yazi\config"
+    }
+    @{
+        source = "yazi\package.toml"
+        target = "$homedir\AppData\Roaming\yazi\config"
+    }
+    @{
+        source = "yazi\yazi.toml"
+        target = "$homedir\AppData\Roaming\yazi\config"
+    }
 )
 
 #================================
@@ -117,20 +133,52 @@ function New-SymbolicLinkSafe {
         return
     }
 
-    New-DirectoryIfMissing $target
-    Backup-ExistingPath $target
+    # Determine whether the given target should be treated as a directory.
+    $srcIsDirectory = Test-Path $src -PathType Container
 
-    if (Test-Path $target) {
-        $item = Get-Item $target -ErrorAction SilentlyContinue
+    $targetIsDirectory = $false
+    if (Test-Path $target -PathType Container) {
+        $targetIsDirectory = $true
+    }
+    elseif ($target.EndsWith('\') -or $target.EndsWith('/')) {
+        $targetIsDirectory = $true
+    }
+    elseif (-not (Test-Path $target) -and -not $srcIsDirectory) {
+        $ext = [System.IO.Path]::GetExtension($target)
+        if ([string]::IsNullOrEmpty($ext)) {
+            $targetIsDirectory = $true
+        }
+    }
+
+    if ($targetIsDirectory) {
+        if (-not (Test-Path $target)) {
+            Write-Host "create directory: $target"
+            if (-not $dryrun) {
+                New-Item -ItemType Directory -Path $target -Force | Out-Null
+            }
+        }
+
+        $leaf = Split-Path $source -Leaf
+        $finalTarget = Join-Path $target $leaf
+    }
+    else {
+        $finalTarget = $target
+    }
+
+    New-DirectoryIfMissing $finalTarget
+    Backup-ExistingPath $finalTarget
+
+    if (Test-Path $finalTarget) {
+        $item = Get-Item $finalTarget -ErrorAction SilentlyContinue
         if ($item -and $item.LinkType -eq 'SymbolicLink') {
             if (-not $dryrun) {
-                Remove-Item $target -Force
+                Remove-Item $finalTarget -Force
             }
         }
     }
 
     Write-Host "link:"
-    Write-Host "  $target"
+    Write-Host "  $finalTarget"
     Write-Host "  -> $src"
 
     if ($dryrun) {
@@ -138,14 +186,14 @@ function New-SymbolicLinkSafe {
     }
 
     try {
-        New-Item -ItemType SymbolicLink -Path $target -Target $src -ErrorAction Stop | Out-Null
+        New-Item -ItemType SymbolicLink -Path $finalTarget -Target $src -ErrorAction Stop | Out-Null
 
-        if (-not (Test-Path $target)) {
+        if (-not (Test-Path $finalTarget)) {
             throw "link creation failed"
         }
     }
     catch {
-        Write-Warning "Link creation failed: $target"
+        Write-Warning "Link creation failed: $finalTarget"
     }
 }
 

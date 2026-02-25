@@ -1,0 +1,27 @@
+[[plugin.deps]]
+use = "yazi-rs/plugins:jump-to-char"
+rev = "6047ce4"
+hash = "6e67c36d6c25fc84cb0976aac8a3ff5"
+
+[[plugin.deps]]
+use = "dedukun/bookmarks"
+rev = "9ef1254"
+hash = "fc77f2bd3aad78199fbe11b727b1954f"
+
+[[plugin.deps]]
+use = "dedukun/relative-motions"
+rev = "a603d9e"
+hash = "4841d0db6a2380a16fd8c647fc1d1187"
+
+[[plugin.deps]]
+use = "h-hg/yamb"
+rev = "5f2e22e"
+hash = "699fe07e0d2d1b4af8dafb84168eeb04"
+
+[[plugin.deps]]
+use = "orhnk/system-clipboard"
+rev = "75a5330"
+hash = "9ab2a0e74968f7f0e46893021764cb66"
+
+[flavor]
+deps = []
