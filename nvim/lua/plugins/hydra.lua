@@ -1,4 +1,5 @@
 return {
+  -- 一時的なサブモードを作る
   "anuvyklack/hydra.nvim",
 
   config = function()
