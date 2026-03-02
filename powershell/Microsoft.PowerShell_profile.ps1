@@ -1,10 +1,47 @@
-# 変数定義 
-$notedir = "$env:USERPROFILE\Dropbox\Documents\note"
-$mydirs = @(
-    $notedir
-    "$env:USERPROFILE\Dropbox\code"
-    "$env:USERPROFILE\src"
-)
+
+# Path
+# user_path.ps1に$notedir, $mydirsを定義
+$profile_dir = Split-Path -Parent (Get-Item $PROFILE).Target
+$user_path_file = Join-Path $profile_dir "user_path.ps1"
+$mydirs = @(".")
+if (Test-Path $user_path_file) {
+    . $user_path_file
+}
+
+function Get-TopLevelPaths($paths) {
+    # フルパスに正規化 + 重複除去
+    $normalized = $paths |
+        ForEach-Object {
+            try {
+                (Resolve-Path $_).Path.TrimEnd('\')
+            } catch {
+                $null
+            }
+        } |
+        Where-Object { $_ } |
+        Sort-Object -Unique
+
+    $result = @()
+
+    foreach ($path in $normalized) {
+
+        $isChild = $false
+
+        foreach ($parent in $result) {
+            if ($path.StartsWith($parent + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
+                $isChild = $true
+                break
+            }
+        }
+
+        if (-not $isChild) {
+            $result += $path
+        }
+    }
+
+    return $result
+}
+$mydirs = Get-TopLevelPaths $mydirs
 
 # Use emacs keybinding in commandline
 Import-Module PSReadLine
