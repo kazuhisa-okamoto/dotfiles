@@ -4,6 +4,10 @@ on = [ "o" ]
 run = "open --interactive"
 desc = "Open files by nvim/vscode"
 
+[[manager.prepend_keymap]]
+on   = [ "c" ]
+run  = "open --launch open_vscode"
+desc = "VSCodeで開く (ファイル/フォルダ共通)"
 
 [[manager.prepend_keymap]]
 on   = "p"
@@ -124,3 +128,48 @@ on   = "f"
 run  = "plugin jump-to-char"
 desc = "Jump to char"
 
+
+[[mgr.prepend_keymap]]
+on = [ "g", "1" ]
+run = "tab_switch 0"
+des = "tab 1"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "2" ]
+run = "tab_switch 1"
+des = "tab 2"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "3" ]
+run = "tab_switch 2"
+des = "tab 3"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "4" ]
+run = "tab_switch 3"
+des = "tab 4"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "5" ]
+run = "tab_switch 4"
+des = "tab 5"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "6" ]
+run = "tab_switch 5"
+des = "tab 6"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "7" ]
+run = "tab_switch 6"
+des = "tab 7"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "8" ]
+run = "tab_switch 7"
+des = "tab 8"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "9" ]
+run = "tab_switch 8"
+des = "tab 9"

@@ -190,12 +190,7 @@ function ls {
 # tablacus
 function te {
     param([string]$path = ".")
-    $tablacus = "C:\Program Files\te250907\te64.exe"
-    if (Test-Path $tablacus) {
-        & $tablacus (Resolve-Path $path)
-    } else {
-        Write-Host "$tablacus is not found"
-    }
+    & "te64" (Resolve-Path $path)
 }
 
 # Fork
@@ -258,6 +253,7 @@ function stree($filedirpath) {
 }
 
 Set-Alias -Name lg -Value lazygit
+
 Set-Alias vim nvim
 Set-Alias vi nvim
 

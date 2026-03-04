@@ -3,11 +3,20 @@ open_nvim = [
 	{ run = 'nvim "%s"', block = true, desc = "Open in Neovim", for = "windows" }
 ]
 
+open_nvim_new_tab = [
+	{ run = 'wezterm cli spawn -- nvim "%s"', block = true, desc = "Open in Neovim (new tab)", for = "windows" }
+]
+
 open_vscode = [
 	{ run = 'code "%s"', orphan = true, desc = "Open in VSCode", for = "windows" }
 ]
 
+open_tablacus = [
+	{ run = 'TE64.exe "%s"', orphan = true, desc = "Open in Tablacus", for = "windows" }
+]
+
 [open]
 rules = [
-    { url = "*", use = [ "open_nvim", "open_vscode" ] }
+    { url = "*/", use = [ "open_vscode", "open_tablacus", "open_nvim_new_tab", "open_nvim" ] },
+    { url = "*", use = [ "open_nvim_new_tab", "open_vscode", "open_nvim" ] }
 ]
