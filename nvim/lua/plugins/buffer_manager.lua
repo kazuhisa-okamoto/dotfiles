@@ -1,4 +1,3 @@
-
 return {
   "j-morano/buffer_manager.nvim",
   dependencies = { "nvim-lua/plenary.nvim" },
@@ -10,13 +9,12 @@ return {
       use_shortcuts = true,
     })
 
-    -- キーマップ
     local map = vim.keymap.set
     local opts = { noremap = true, silent = true }
     local bmui = require("buffer_manager.ui")
 
     -- バッファ一覧
-    map("n", "<leader>bm", bmui.toggle_quick_menu, opts)
+    map("n", "<leader>b", bmui.toggle_quick_menu, opts)
 
     -- 次/前のバッファへ移動
     map("n", "<S-j>", bmui.nav_next, opts)

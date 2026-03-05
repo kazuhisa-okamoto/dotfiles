@@ -261,11 +261,18 @@ Set-Alias vi nvim
 function y {
 	$tmp = (New-TemporaryFile).FullName
 	yazi.exe $args --cwd-file="$tmp"
-	$cwd = Get-Content -Path $tmp -Encoding UTF8
-	if ($cwd -ne $PWD.Path -and (Test-Path L$cwd -PathType Container)) {
-		Set-Location -LiteralPath (Resolve-Path -LiteralPath $cwd).Path
-	}
-	Remove-Item -Path $tmp
+
+    if (Test-Path $tmp) {
+        $cwd = Get-Content -Path $tmp -Raw
+
+        if ($cwd -and $cwd -ne $PWD.Path -and
+            (Test-Path -LiteralPath $cwd -PathType Container)) {
+
+            Set-Location -Path $cwd
+        }
+    }
+
+	Remove-Item $tmp
 }
 
 # ターミナルタブタイトル設定
@@ -376,17 +383,13 @@ function fcode {
         [Parameter(Position=0)][string]$Query
     )
 
-    # タイプの決定
     $type = if ($f) { "f" } else { "d" }
     $roots = Resolve-PathArg $mydirs $Path
 
-    # fd の結果をリアルタイムに fzf へ流し込む
     $selected = & {
-        # ディレクトリモードならお気に入り ($mydirs) を最優先で流す
-        if ($type -eq "d") { $mydirs }
+        #if ($type -eq "d") { $mydirs }
         
-        # fd を実行。--absolute-path は維持しつつ、ストリーム出力
-        fd . --type $type --hidden --absolute-path $fdExcludeArgs $roots
+        fd . $roots --type $type --hidden --absolute-path $fdExcludeArgs
     } | fzf --query="$Query" --header "Open with VS Code ($type)" --no-sort --no-select-1
 
     if ($selected) { code $selected }
@@ -396,17 +399,18 @@ function fcode {
 function fvi {
     param(
         [Alias('p')][string]$Path,
+        [switch]$f,
+        [switch]$d, # -d はデフォルト（ディレクトリ）
         [Parameter(Position=0)][string]$Query
     )
+    $type = if ($f) { "f" } else { "d" }
     $roots = Resolve-PathArg $mydirs $Path
 
     $selected = & {
-        fd . $roots --type f --hidden $fdExcludeArgs
+        fd . $roots --type $type --hidden --absolute-path $fdExcludeArgs
     } | fzf --query="$Query" --header "Open with Neovim" --no-sort --multi
 
-    if ($selected) {
-        nvim $selected
-    }
+    if ($selected) { nvim $selected }
 }
 
 # メモをvscodeで開く
