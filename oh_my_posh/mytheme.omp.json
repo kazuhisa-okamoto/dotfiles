@@ -28,11 +28,20 @@
           "type": "git"
         },
         {
-          "background": "#ff8080",
-          "foreground": "#ffffff",
+          "background": "#906cff",
+          "foreground": "#100e23",
+          "style": "diamond",
           "leading_diamond": "",
           "trailing_diamond": "\ue0b0",
+          "template": " \ue235 {{ if .Error }}{{ .Error }}{{ else }}{{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}{{ end }} ",
+          "type": "python"
+        },
+        {
+          "background": "#ff8080",
+          "foreground": "#ffffff",
           "style": "diamond",
+          "leading_diamond": "",
+          "trailing_diamond": "\ue0b0",
           "template": " {{ reason .Code }} ",
           "type": "status"
         }

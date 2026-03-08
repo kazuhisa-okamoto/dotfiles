@@ -17,6 +17,6 @@ open_tablacus = [
 
 [open]
 rules = [
-    { url = "*/", use = [ "open_nvim", "open_nvim_new_tab", "open_nvim_vscode", "open_tablacus" ] },
+    { url = "*/", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode", "open_tablacus" ] },
     { url = "*", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode" ] }
 ]
