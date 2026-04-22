@@ -42,6 +42,11 @@
         },
         "when": "explorerViewletFocus && explorerViewletVisible && !inputFocus",
     },
+    {
+      "key": "x",
+      "command": "workbench.action.closeActiveEditor",
+      "when": "explorerViewletVisible && openEditorsFocus"
+    }
 
     // ターミナルとエディタ間を移動(ターミナルを閉じない) ";"と書いているが":"にセットされている.
     { "key": "ctrl+;",
@@ -163,6 +168,16 @@
         "command": "editor.action.goToReferences",
         "when": "editorTextFocus && neovim.mode == 'normal'"
     },
+    {
+        "key": "ctrl+g b",
+        "command": "workbench.action.navigateBack",
+        "when": "editorTextFocus && neovim.mode == 'normal'"
+    },
+    {
+        "key": "ctrl+g f",
+        "command": "workbench.action.navigateForward",
+        "when": "editorTextFocus && neovim.mode == 'normal'"
+    },
     
     // ターミナルをエディタペインで開く
     {
@@ -204,5 +219,16 @@
       "key": "ctrl+w q",
       "command": "workbench.action.closeActiveEditor",
       "when": "!editorTextFocus && !filesExplorerFocus && !searchViewletFocus && neovim.mode != 'cmdline'"
-    }
+    },
+    
+    // テスト実行
+    {
+        "key": "ctrl+alt+r",
+        "command": "testing.runAtCursor"
+    },
+    {
+        "key": "ctrl+alt+d",
+        "command": "testing.debugAtCursor"
+    },
+
 ]

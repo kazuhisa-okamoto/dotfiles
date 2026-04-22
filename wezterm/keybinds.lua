@@ -121,13 +121,13 @@ return {
   key_tables = {
     -- Paneサイズ調整 leader + s
     resize_pane = {
-      { key = "h", action = act.AdjustPaneSize({ "Left", 1 }) },
-      { key = "l", action = act.AdjustPaneSize({ "Right", 1 }) },
-      { key = "k", action = act.AdjustPaneSize({ "Up", 1 }) },
-      { key = "j", action = act.AdjustPaneSize({ "Down", 1 }) },
+      { key = "h", action = act.AdjustPaneSize({ "Left", 2 }) },
+      { key = "l", action = act.AdjustPaneSize({ "Right", 2 }) },
+      { key = "k", action = act.AdjustPaneSize({ "Up", 2 }) },
+      { key = "j", action = act.AdjustPaneSize({ "Down", 2 }) },
 
       -- Cancel the mode by pressing escape
-      { key = "Enter", action = "PopKeyTable" },
+      { key = "Escape", action = "PopKeyTable" },
     },
     activate_pane = {
       { key = "h", action = act.ActivatePaneDirection("Left") },

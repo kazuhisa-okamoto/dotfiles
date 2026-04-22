@@ -351,7 +351,7 @@ function fcd {
 
     # fd の出力をパイプで直接 fzf に渡す(fdが走っている途中からfzfを動かせる)
     $selected = & {
-        $mydirs
+        $roots
         fd . $roots --type d --hidden --absolute-path $fdExcludeArgs
     } | fzf --query="$Query" --header "Move to Directory" --no-sort
 
@@ -366,7 +366,7 @@ function fcdg {
     )
     $roots = Resolve-PathArg $mydirs $Path
 
-    $repos = fd .git $roots --hidden --type d --max-depth 5 |
+    $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
          ForEach-Object { Split-Path $_ -Parent } |
          Sort-Object
     $selected = $repos |
@@ -450,11 +450,25 @@ function fcodeg {
         [Parameter(Position=0)][string]$Query
     )
     $roots = Resolve-PathArg $mydirs $Path
-    $repos = fd . --hidden --fixed-strings ".git" $roots --type d --max-depth 5 |
+    $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
         ForEach-Object { Split-Path $_ -Parent }
     $repos |
         fzf --query="$Query" --header "Open Repository (VS Code)" --no-sort |
         ForEach-Object { code $_ }
+}
+
+# リポジトリをNeovimで開く
+function fvig {
+    param(
+        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Query
+    )
+    $roots = Resolve-PathArg $mydirs $Path
+    $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
+        ForEach-Object { Split-Path $_ -Parent }
+    $repos |
+        fzf --query="$Query" --header "Open Repository (Neovim)" --no-sort |
+        ForEach-Object { nvim $_ }
 }
 
 # ripgrep
