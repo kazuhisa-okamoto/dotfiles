@@ -44,7 +44,14 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
 -- ESC
-vim.keymap.set('i', '<C-j>', '<Esc>', { noremap = true, silent = true })
+vim.keymap.set({ 'i', 'v', 'n', 'c' }, '<C-j>', '<Esc>', { noremap = true, silent = true })
+vim.api.nvim_create_autocmd("BufEnter", {
+  callback = function()
+    if vim.api.nvim_win_get_config(0).relative ~= "" then
+      vim.keymap.set({ 'n', 'i', 'v' }, '<C-j>', '<Esc>', { buffer = true, noremap = true, silent = true })
+    end
+  end,
+})
 
 -- 透過
 local transparent = false

@@ -17,8 +17,8 @@ return {
     map("n", "<leader>b", bmui.toggle_quick_menu, opts)
 
     -- 次/前のバッファへ移動
-    map("n", "<S-j>", bmui.nav_next, opts)
-    map("n", "<S-k>", bmui.nav_prev, opts)
+    map("n", "]b", bmui.nav_next, opts)
+    map("n", "[b", bmui.nav_prev, opts)
 
     -- ID指定でジャンプ
     for i = 1, 10 do
