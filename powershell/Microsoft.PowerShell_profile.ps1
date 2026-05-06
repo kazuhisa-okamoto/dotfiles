@@ -343,8 +343,7 @@ function fhis {
 # 選択ディレクトリへ移動
 function fcd {
     param(
-        [Alias('p')][string]$Path,
-        [Parameter(Position=0)][string]$Query
+        [Parameter(Position=0)][string]$Path
     )
 
     $roots = Resolve-PathArg $mydirs $Path
@@ -353,7 +352,7 @@ function fcd {
     $selected = & {
         $roots
         fd . $roots --type d --hidden --absolute-path $fdExcludeArgs
-    } | fzf --query="$Query" --header "Move to Directory" --no-sort
+    } | fzf --header "Move to Directory" --no-sort
 
     if ($selected) { Set-Location $selected }
 }
@@ -361,8 +360,7 @@ function fcd {
 # .gitがあるディレクトリへ移動
 function fcdg {
     param(
-        [Alias('p')][string]$Path,
-        [Parameter(Position=0)][string]$Query
+        [Parameter(Position=0)][string]$Path
     )
     $roots = Resolve-PathArg $mydirs $Path
 
@@ -370,27 +368,26 @@ function fcdg {
          ForEach-Object { Split-Path $_ -Parent } |
          Sort-Object
     $selected = $repos |
-        fzf --query="$Query" --header "Move to Git Repository" --no-sort
+        fzf --header "Move to Git Repository" --no-sort
     if ($selected) { Set-Location $selected }
 }
 
 # VS Codeで開く. 引数でファイル(-f)/ディレクトリ(-d)を指定.
 function fcode {
     param(
-        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Path,
         [switch]$f,
-        [switch]$d, # -d はデフォルト（ディレクトリ）
-        [Parameter(Position=0)][string]$Query
+        [switch]$d
     )
 
-    $type = if ($f) { "f" } else { "d" }
+    $type = if ($d) { "d" } else { "f" }
     $roots = Resolve-PathArg $mydirs $Path
 
     $selected = & {
         #if ($type -eq "d") { $mydirs }
-        
+
         fd . $roots --type $type --hidden --absolute-path $fdExcludeArgs
-    } | fzf --query="$Query" --header "Open with VS Code ($type)" --no-sort --no-select-1
+    } | fzf --header "Open with VS Code ($type)" --no-sort --no-select-1
 
     if ($selected) { code $selected }
 }
@@ -398,17 +395,16 @@ function fcode {
 # Neovimで開く
 function fvi {
     param(
-        [Alias('p')][string]$Path,
+        [Parameter(Position=0)][string]$Path,
         [switch]$f,
-        [switch]$d, # -d はデフォルト（ディレクトリ）
-        [Parameter(Position=0)][string]$Query
+        [switch]$d
     )
-    $type = if ($f) { "f" } else { "d" }
+    $type = if ($d) { "d" } else { "f" }
     $roots = Resolve-PathArg $mydirs $Path
 
     $selected = & {
         fd . $roots --type $type --hidden --absolute-path $fdExcludeArgs
-    } | fzf --query="$Query" --header "Open with Neovim" --no-sort --multi
+    } | fzf --header "Open with Neovim" --no-sort --multi
 
     if ($selected) { nvim $selected }
 }
@@ -416,14 +412,13 @@ function fvi {
 # メモをvscodeで開く
 function fcodememo {
     param(
-        [Alias('p')][string]$Path,
-        [Parameter(Position=0)][string]$Query
+        [Parameter(Position=0)][string]$Path
     )
     $roots = Resolve-PathArg $notedir $Path
-    
+
     $selected = & {
         fd . $roots --type f $fdExcludeArgs
-    } | fzf --query="$Query" --header "Open Memo (VS Code)" --no-sort --multi
+    } | fzf --header "Open Memo (VS Code)" --no-sort --multi
 
     if ($selected) { code $selected }
 }
@@ -431,14 +426,13 @@ function fcodememo {
 # メモをNeovimで開く
 function fvimemo {
     param(
-        [Alias('p')][string]$Path,
-        [Parameter(Position=0)][string]$Query
+        [Parameter(Position=0)][string]$Path
     )
     $roots = Resolve-PathArg $notedir $Path
-    
+
     $selected = & {
         fd . $roots --type f $fdExcludeArgs
-    } | fzf --query="$Query" --header "Open Memo (Neovim)" --no-sort --multi
+    } | fzf --header "Open Memo (Neovim)" --no-sort --multi
 
     if ($selected) { nvim $selected }
 }
@@ -446,28 +440,26 @@ function fvimemo {
 # リポジトリをVS Codeで開く
 function fcodeg {
     param(
-        [Alias('p')][string]$Path,
-        [Parameter(Position=0)][string]$Query
+        [Parameter(Position=0)][string]$Path
     )
     $roots = Resolve-PathArg $mydirs $Path
     $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
         ForEach-Object { Split-Path $_ -Parent }
     $repos |
-        fzf --query="$Query" --header "Open Repository (VS Code)" --no-sort |
+        fzf --header "Open Repository (VS Code)" --no-sort |
         ForEach-Object { code $_ }
 }
 
 # リポジトリをNeovimで開く
 function fvig {
     param(
-        [Alias('p')][string]$Path,
-        [Parameter(Position=0)][string]$Query
+        [Parameter(Position=0)][string]$Path
     )
     $roots = Resolve-PathArg $mydirs $Path
     $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
         ForEach-Object { Split-Path $_ -Parent }
     $repos |
-        fzf --query="$Query" --header "Open Repository (Neovim)" --no-sort |
+        fzf --header "Open Repository (Neovim)" --no-sort |
         ForEach-Object { nvim $_ }
 }
 
@@ -475,16 +467,12 @@ function fvig {
 # ファイルを検索し, 選択したファイル, 行番号を@(ファイル, 行番号)として返す
 function rgf {
     param(
-        [Alias('p')]
-        [string]$Path = ".",
-
         [Parameter(Position = 0)]
-        [string]$Query
+        [string]$Path = "."
     )
 
-    $selected = rg --line-number --column --color=always --smart-case . $Path | 
+    $selected = rg --line-number --column --color=always --smart-case . $Path |
         fzf --ansi `
-            --query "$Query" `
             --delimiter ':' `
             --preview 'bat --color=always --highlight-line {2} {1}' `
             --preview-window 'right:60%:wrap'
@@ -499,14 +487,11 @@ function rgf {
 # ripgrepの結果をnvimで開く
 function rgvi {
     param(
-        [Alias('p')]
-        [string]$Path = ".",
-
         [Parameter(Position = 0)]
-        [string]$Query
+        [string]$Path = "."
     )
 
-    $file, $line = rgf -p $Path $Query
+    $file, $line = rgf $Path
 
     if (Test-Path $file) {
         nvim "+$line" -- $file
@@ -516,14 +501,11 @@ function rgvi {
 # ripgrepの結果をvscodeで開く
 function rgcode {
     param(
-        [Alias('p')]
-        [string]$Path = ".",
-
         [Parameter(Position = 0)]
-        [string]$Query
+        [string]$Path = "."
     )
 
-    $file, $line = rgf -p $Path $Query
+    $file, $line = rgf $Path
 
     if (Test-Path $file) {
         code -g "${file}:${line}"
