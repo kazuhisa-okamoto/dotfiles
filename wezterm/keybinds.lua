@@ -65,6 +65,16 @@ return {
     -- 画面フルスクリーン切り替え
     { key = "Enter", mods = "ALT", action = act.ToggleFullScreen },
 
+    -- 画面スクロール
+    -- プロンプト単位で移動 (oh-my-posh の shell_integration が必要)
+    { key = "k", mods = "CTRL|SHIFT", action = act.ScrollToPrompt(-1) },
+    { key = "j", mods = "CTRL|SHIFT", action = act.ScrollToPrompt(1) },
+    -- 半ページスクロール
+    { key = "u", mods = "CTRL|SHIFT", action = act.ScrollByPage(-0.5) },
+    { key = "d", mods = "CTRL|SHIFT", action = act.ScrollByPage(0.5) },
+    -- 一番下へ
+    { key = "g", mods = "CTRL|SHIFT", action = act.ScrollToBottom },
+
     -- コピーモード
     { key = "[", mods = "LEADER", action = act.ActivateCopyMode },
     -- コピ, 貼り付け
