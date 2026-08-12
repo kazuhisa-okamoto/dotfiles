@@ -3,7 +3,7 @@
         "asvetliakov.vscode-neovim": 1
     },
 
-    "workbench.colorTheme": "GitHub Dark",
+    "workbench.colorTheme": "Noctis Obscuro",
     
     // --- tex ---
     // 自動保存
@@ -67,4 +67,5 @@
     "chat.viewSessions.orientation": "stacked",
     "editor.fontFamily": "'JetBrainsMono NF', Consolas, 'Courier New', monospace",
     "python.terminal.activateEnvironment": false,
+    "claudeCode.preferredLocation": "panel",
 }
