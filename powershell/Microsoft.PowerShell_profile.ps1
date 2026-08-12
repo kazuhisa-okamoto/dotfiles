@@ -53,6 +53,7 @@ function emacskey {
     Write-Host "M-f, M-b: Forward/Backward one word."
     Write-Host "C-d, C-h: Delete one character before/after the cursor."
     Write-Host "C-w, M-d: Delete one word before/after the cursor."
+    Write-Host "C-k: Delete from the cursor to the end of line."
 }
 
 $env:PATH = [Environment]::GetEnvironmentVariable("Path", "User") + ';' + [Environment]::GetEnvironmentVariable("Path", "Machine")
