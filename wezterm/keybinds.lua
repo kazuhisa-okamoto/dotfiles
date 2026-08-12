@@ -153,12 +153,16 @@ return {
       { key = "k", mods = "NONE", action = act.CopyMode("MoveUp") },
       { key = "l", mods = "NONE", action = act.CopyMode("MoveRight") },
       -- 最初と最後に移動
+      -- Shiftを伴って入力される記号・大文字キーは NONE と SHIFT の両方を登録する
       { key = "^", mods = "NONE", action = act.CopyMode("MoveToStartOfLineContent") },
+      { key = "^", mods = "SHIFT", action = act.CopyMode("MoveToStartOfLineContent") },
       { key = "$", mods = "NONE", action = act.CopyMode("MoveToEndOfLineContent") },
+      { key = "$", mods = "SHIFT", action = act.CopyMode("MoveToEndOfLineContent") },
       -- 左端に移動
       { key = "0", mods = "NONE", action = act.CopyMode("MoveToStartOfLine") },
       { key = "o", mods = "NONE", action = act.CopyMode("MoveToSelectionOtherEnd") },
       { key = "O", mods = "NONE", action = act.CopyMode("MoveToSelectionOtherEndHoriz") },
+      { key = "O", mods = "SHIFT", action = act.CopyMode("MoveToSelectionOtherEndHoriz") },
       --
       { key = ";", mods = "NONE", action = act.CopyMode("JumpAgain") },
       -- 単語ごと移動
@@ -169,15 +173,21 @@ return {
       { key = "t", mods = "NONE", action = act.CopyMode({ JumpForward = { prev_char = true } }) },
       { key = "f", mods = "NONE", action = act.CopyMode({ JumpForward = { prev_char = false } }) },
       { key = "T", mods = "NONE", action = act.CopyMode({ JumpBackward = { prev_char = true } }) },
+      { key = "T", mods = "SHIFT", action = act.CopyMode({ JumpBackward = { prev_char = true } }) },
       { key = "F", mods = "NONE", action = act.CopyMode({ JumpBackward = { prev_char = false } }) },
+      { key = "F", mods = "SHIFT", action = act.CopyMode({ JumpBackward = { prev_char = false } }) },
       -- 一番下へ
       { key = "G", mods = "NONE", action = act.CopyMode("MoveToScrollbackBottom") },
+      { key = "G", mods = "SHIFT", action = act.CopyMode("MoveToScrollbackBottom") },
       -- 一番上へ
       { key = "g", mods = "NONE", action = act.CopyMode("MoveToScrollbackTop") },
       -- viweport
       { key = "H", mods = "NONE", action = act.CopyMode("MoveToViewportTop") },
+      { key = "H", mods = "SHIFT", action = act.CopyMode("MoveToViewportTop") },
       { key = "L", mods = "NONE", action = act.CopyMode("MoveToViewportBottom") },
+      { key = "L", mods = "SHIFT", action = act.CopyMode("MoveToViewportBottom") },
       { key = "M", mods = "NONE", action = act.CopyMode("MoveToViewportMiddle") },
+      { key = "M", mods = "SHIFT", action = act.CopyMode("MoveToViewportMiddle") },
       -- スクロール
       { key = "b", mods = "CTRL", action = act.CopyMode("PageUp") },
       { key = "f", mods = "CTRL", action = act.CopyMode("PageDown") },
@@ -187,6 +197,7 @@ return {
       { key = "v", mods = "NONE", action = act.CopyMode({ SetSelectionMode = "Cell" }) },
       { key = "v", mods = "CTRL", action = act.CopyMode({ SetSelectionMode = "Block" }) },
       { key = "V", mods = "NONE", action = act.CopyMode({ SetSelectionMode = "Line" }) },
+      { key = "V", mods = "SHIFT", action = act.CopyMode({ SetSelectionMode = "Line" }) },
       -- コピー
       { key = "y", mods = "NONE", action = act.CopyTo("Clipboard") },
 
