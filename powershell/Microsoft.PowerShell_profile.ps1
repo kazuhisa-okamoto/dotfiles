@@ -298,6 +298,30 @@ function python2() {
     }
 }
 
+# poetry
+# カレントディレクトリのプロジェクトの仮想環境をアクティベート
+# 解除はActivate.ps1が定義するdeactivateを使う
+function pvenv() {
+    if (-not (Get-Command poetry -ErrorAction SilentlyContinue)) {
+        Write-Host "poetry is not found"
+        return
+    }
+
+    $venvpath = poetry env info --path 2>$null
+    if (-not $venvpath) {
+        Write-Host "Virtual environment is not found. Run 'poetry install' first."
+        return
+    }
+
+    $activate = Join-Path $venvpath "Scripts\Activate.ps1"
+    if (-not (Test-Path $activate)) {
+        Write-Host "$activate is not found"
+        return
+    }
+
+    & $activate
+}
+
 # zoxide
 # z "key1" "key2"
 Invoke-Expression (& {zoxide init powershell | Out-String})
