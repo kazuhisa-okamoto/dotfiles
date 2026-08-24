@@ -46,7 +46,7 @@
       "key": "x",
       "command": "workbench.action.closeActiveEditor",
       "when": "explorerViewletVisible && openEditorsFocus"
-    }
+    },
 
     // ターミナルとエディタ間を移動(ターミナルを閉じない) ";"と書いているが":"にセットされている.
     { "key": "ctrl+;",
@@ -64,7 +64,7 @@
       "key": "ctrl+oem_3",
       "command": "-vscode-neovim.escape",
       "when": "editorTextFocus && neovim.init && editorLangId not in 'neovim.editorLangIdExclusions'"
-    }
+    },
 
     // ウィンドウ移動. vimではウィンドウの入れ替えだがウィンドウの移動に変更.
     {
@@ -129,16 +129,11 @@
         "when": "editorTextFocus && neovim.ctrlKeysNormal.h && neovim.init && neovim.mode != 'insert' && editorLangId not in 'neovim.editorLangIdExclusions'"
     },
 
-    // github copilot
+    // claude code. 現在アクティブなペインに開く.
     {
         "key": "ctrl+o",
-        "command": "workbench.panel.chat.view.copilot.focus",
+        "command": "claude-vscode.primaryEditor.open",
         "when": "editorTextFocus"
-    },
-    {
-        "key": "ctrl+o",
-        "command":"workbench.action.focusActiveEditorGroup",
-        "when": "view.workbench.panel.chat.view.copilot.visible && !editorFocus"
     },
     {
         "key": "ctrl+o",
