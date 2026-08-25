@@ -129,10 +129,10 @@
         "when": "editorTextFocus && neovim.ctrlKeysNormal.h && neovim.init && neovim.mode != 'insert' && editorLangId not in 'neovim.editorLangIdExclusions'"
     },
 
-    // claude code. 現在アクティブなペインに開く.
+    // claude code. 開いていればそのペインに移動, 無ければ新規に開く.
     {
         "key": "ctrl+o",
-        "command": "claude-vscode.primaryEditor.open",
+        "command": "claude-vscode.focus",
         "when": "editorTextFocus"
     },
     {
