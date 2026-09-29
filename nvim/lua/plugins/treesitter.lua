@@ -29,6 +29,8 @@ return {
         "rust",
         "typescript",
         "tsx",
+        "markdown",
+        "markdown_inline",
       },
       highlight = {
         enable = true,
