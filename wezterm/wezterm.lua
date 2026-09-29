@@ -89,4 +89,10 @@ config.keys = require("keybinds").keys
 config.key_tables = require("keybinds").key_tables
 config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 2000 }
 
+----------------------------------------------------
+-- workspace の保存と、起動時の復元 (workspace_session.lua)
+----------------------------------------------------
+-- default_prog を使うので、その設定より後で呼ぶ
+require("workspace_session").apply_to_config(config)
+
 return config

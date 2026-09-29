@@ -48,6 +48,10 @@ return {
         end),
       }),
     },
+    -- すべての workspace を今すぐ保存 (起動時に復元される。普段は自動保存)
+    { key = "S", mods = "LEADER|SHIFT", action = require("workspace_session").save_action() },
+    -- すべての workspace を保存して WezTerm を終了 (window を閉じるとその workspace だけが閉じる)
+    { key = "q", mods = "LEADER", action = require("workspace_session").quit_action() },
     -- Debug Overlay / REPL を開く
     { key = "L", mods = "LEADER|SHIFT", action = act.ShowDebugOverlay },
 

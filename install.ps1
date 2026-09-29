@@ -59,6 +59,14 @@ $links = @(
         target = "$homedir\.config\wezterm\keybinds.lua"
     },
     @{
+        source = "wezterm\workspace_session.lua"
+        target = "$homedir\.config\wezterm\workspace_session.lua"
+    },
+    @{
+        source = "wezterm\claude_session_hook.ps1"
+        target = "$homedir\.config\wezterm\claude_session_hook.ps1"
+    },
+    @{
         source = "powershell\Microsoft.PowerShell_profile.ps1"
         target = "$profile"
     }
