@@ -145,7 +145,13 @@ function New-SymbolicLinkSafe {
     $srcIsDirectory = Test-Path $src -PathType Container
 
     $targetIsDirectory = $false
-    if (Test-Path $target -PathType Container) {
+    $targetItem = Get-Item $target -ErrorAction SilentlyContinue
+    if ($targetItem -and $targetItem.LinkType -eq 'SymbolicLink') {
+        # An existing link (e.g. nvim\lua from a previous run) is the link to
+        # recreate, not a directory to place a new link into.
+        $targetIsDirectory = $false
+    }
+    elseif (Test-Path $target -PathType Container) {
         $targetIsDirectory = $true
     }
     elseif ($target.EndsWith('\') -or $target.EndsWith('/')) {
@@ -180,7 +186,8 @@ function New-SymbolicLinkSafe {
         $item = Get-Item $finalTarget -ErrorAction SilentlyContinue
         if ($item -and $item.LinkType -eq 'SymbolicLink') {
             if (-not $dryrun) {
-                Remove-Item $finalTarget -Force
+                # Delete() removes only the link itself, even for a directory link
+                $item.Delete()
             }
         }
     }
