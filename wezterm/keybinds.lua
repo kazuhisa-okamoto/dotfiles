@@ -10,6 +10,16 @@ wezterm.on("update-right-status", function(window, pane)
   window:set_right_status(name or "")
 end)
 
+-- workspaceの名前変更
+local rename_workspace = act.PromptInputLine({
+  description = "(wezterm) Set workspace title:",
+  action = wezterm.action_callback(function(win, pane, line)
+    if line then
+      wezterm.mux.rename_workspace(wezterm.mux.get_active_workspace(), line)
+    end
+  end),
+})
+
 return {
   keys = {
     {
@@ -18,19 +28,10 @@ return {
       mods = "LEADER",
       action = act.ShowLauncherArgs({ flags = "WORKSPACES", title = "Select workspace" }),
     },
-    {
-      --workspaceの名前変更
-      key = "$",
-      mods = "LEADER",
-      action = act.PromptInputLine({
-        description = "(wezterm) Set workspace title:",
-        action = wezterm.action_callback(function(win, pane, line)
-          if line then
-            wezterm.mux.rename_workspace(wezterm.mux.get_active_workspace(), line)
-          end
-        end),
-      }),
-    },
+    -- workspaceの名前変更
+    -- Shiftを伴って入力される記号キーは LEADER と LEADER|SHIFT の両方を登録する
+    { key = "$", mods = "LEADER", action = rename_workspace },
+    { key = "$", mods = "LEADER|SHIFT", action = rename_workspace },
     {
       key = "n",
       mods = "LEADER",
