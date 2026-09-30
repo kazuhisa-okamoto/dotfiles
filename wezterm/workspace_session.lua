@@ -114,6 +114,8 @@ local function read_markers()
   end
   return markers
 end
+-- claude_status.lua でも使う
+M.read_markers = read_markers
 
 local function pane_program(markers, pane_id)
   local marker = markers[tostring(pane_id)]

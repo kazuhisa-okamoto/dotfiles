@@ -63,6 +63,10 @@ $links = @(
         target = "$homedir\.config\wezterm\workspace_session.lua"
     },
     @{
+        source = "wezterm\claude_status.lua"
+        target = "$homedir\.config\wezterm\claude_status.lua"
+    },
+    @{
         source = "wezterm\claude_session_hook.ps1"
         target = "$homedir\.config\wezterm\claude_session_hook.ps1"
     },

@@ -1,13 +1,18 @@
 local wezterm = require("wezterm")
 local act = wezterm.action
+local claude_status = require("claude_status")
 
--- Show which key table is active in the status area
+-- Show which key table is active and the Claude Code states in the status area
 wezterm.on("update-right-status", function(window, pane)
+  local cells = {}
   local name = window:active_key_table()
   if name then
-    name = "TABLE: " .. name
+    table.insert(cells, { Text = "TABLE: " .. name .. " " })
   end
-  window:set_right_status(name or "")
+  for _, cell in ipairs(claude_status.status_cells(window, pane)) do
+    table.insert(cells, cell)
+  end
+  window:set_right_status(wezterm.format(cells))
 end)
 
 -- workspaceの名前変更
@@ -53,6 +58,8 @@ return {
     { key = "S", mods = "LEADER|SHIFT", action = require("workspace_session").save_action() },
     -- すべての workspace を保存して WezTerm を終了 (window を閉じるとその workspace だけが閉じる)
     { key = "q", mods = "LEADER", action = require("workspace_session").quit_action() },
+    -- すべての workspace の Claude Code の一覧を開き、選んだ pane に移る
+    { key = "c", mods = "LEADER", action = claude_status.selector_action() },
     -- Debug Overlay / REPL を開く
     { key = "L", mods = "LEADER|SHIFT", action = act.ShowDebugOverlay },
 
