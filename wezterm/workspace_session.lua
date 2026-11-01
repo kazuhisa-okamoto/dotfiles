@@ -224,7 +224,7 @@ local function pwsh_quote(s)
 end
 
 -- nvim / claude を起動してから対話シェルに戻る引数。program が無ければ nil (= default_prog)
-local function spawn_args(program)
+local function spawn_args(program, cwd)
   if not program then
     return nil
   end
@@ -235,6 +235,17 @@ local function spawn_args(program)
     command = program.resume and ("claude --resume " .. pwsh_quote(program.session_id)) or "claude"
   else
     return nil
+  end
+  -- pane:split に args を渡すと、cwd は無視されて分割元の pane の cwd で起動される
+  -- (WezTerm 20240203 の Mux::split_pane)。PowerShell は外部コマンドを今いる場所で
+  -- 起動するので、先に移動しておく。移動できなければ起動せず、シェルだけを残す。
+  -- profile で Set-Location を置き換えている (引数が違う) ので、モジュール名付きで呼ぶ。
+  -- WezTerm が知っている cwd は分割元のままなので、OSC 7 で移動先を知らせ直す
+  if cwd then
+    command = "Microsoft.PowerShell.Management\\Set-Location -LiteralPath " .. pwsh_quote(cwd)
+      .. " -ErrorAction Stop; "
+      .. "$Host.UI.Write([char]27 + ']7;file://localhost/' + (Get-Location).ProviderPath + [char]27 + '\\'); "
+      .. command
   end
   local args = {}
   for _, arg in ipairs(shell) do
@@ -250,7 +261,7 @@ local function spawn_options(saved_pane)
   local program = saved_pane.program
   -- claude の会話は起動したディレクトリに紐づくので、その cwd で再開する
   local cwd = (program and program.cwd) or saved_pane.cwd
-  return { cwd = cwd, args = spawn_args(program) }
+  return { cwd = cwd, args = spawn_args(program, cwd) }
 end
 
 local axes = {
