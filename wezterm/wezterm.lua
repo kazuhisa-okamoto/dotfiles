@@ -11,6 +11,7 @@ config.font_size = 12.0
 config.use_ime = true
 config.window_background_opacity = 0.85
 config.macos_window_background_blur = 20
+config.win32_system_backdrop = "Acrylic"
 config.default_prog = {
   "pwsh.exe"
 }
