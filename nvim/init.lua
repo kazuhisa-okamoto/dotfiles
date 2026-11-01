@@ -74,6 +74,15 @@ function ToggleTransparency()
 end
 vim.keymap.set("n", "<leader>t", ToggleTransparency)
 
+-- markdown の ~文字~ を取り消し線で表示しない (~ はそのまま見える)
+-- colorscheme を読み直すたびに戻るので ColorScheme で毎回打ち消す
+vim.api.nvim_create_autocmd("ColorScheme", {
+  pattern = "*",
+  callback = function()
+    vim.api.nvim_set_hl(0, "@markup.strikethrough", {})
+  end,
+})
+
 -- ====================================================
 -- プラグイン
 -- ====================================================
