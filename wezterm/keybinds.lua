@@ -2,12 +2,26 @@ local wezterm = require("wezterm")
 local act = wezterm.action
 local claude_status = require("claude_status")
 
+-- キーテーブル (モード) ごとの表示名と背景色 (Tokyo Night の配色)
+local key_table_labels = {
+  claude_scroll = { text = "CLAUDE SCROLL", color = "#ff9e64" },
+  copy_mode = { text = "COPY", color = "#e0af68" },
+  resize_pane = { text = "RESIZE", color = "#7aa2f7" },
+  activate_pane = { text = "PANE", color = "#9ece6a" },
+}
+
 -- Show which key table is active and the Claude Code states in the status area
 wezterm.on("update-right-status", function(window, pane)
   local cells = {}
   local name = window:active_key_table()
   if name then
-    table.insert(cells, { Text = "TABLE: " .. name .. " " })
+    local label = key_table_labels[name] or { text = name:upper(), color = "#bb9af7" }
+    table.insert(cells, { Background = { Color = label.color } })
+    table.insert(cells, { Foreground = { Color = "#1a1b26" } })
+    table.insert(cells, { Attribute = { Intensity = "Bold" } })
+    table.insert(cells, { Text = " " .. label.text .. " " })
+    table.insert(cells, "ResetAttributes")
+    table.insert(cells, { Text = " " })
   end
   for _, cell in ipairs(claude_status.status_cells(window, pane)) do
     table.insert(cells, cell)
@@ -89,6 +103,9 @@ return {
 
     -- コピーモード
     { key = "[", mods = "LEADER", action = act.ActivateCopyMode },
+    -- Claude Code の全画面表示のスクロールモード
+    -- (出力が WezTerm のスクロールバックに残らないので, Claude Code にスクロールのキーを送る)
+    { key = "u", mods = "LEADER", action = act.ActivateKeyTable({ name = "claude_scroll", one_shot = false }) },
     -- コピ, 貼り付け
     { key = "c", mods = "SHIFT|CTRL", action = act.CopyTo("Clipboard") },
     { key = "v", mods = "SHIFT|CTRL", action = act.PasteFrom("Clipboard") },
@@ -220,6 +237,17 @@ return {
       { key = "Escape", mods = "NONE", action = act.CopyMode("Close") },
       { key = "c", mods = "CTRL", action = act.CopyMode("Close") },
       { key = "q", mods = "NONE", action = act.CopyMode("Close") },
+    },
+    -- Claude Code の全画面表示のスクロール leader + u
+    -- alt+j / alt+k は ~/.claude/keybindings.json で scroll:lineDown / scroll:lineUp に割り当てている
+    claude_scroll = {
+      { key = "j", mods = "NONE", action = act.SendKey({ key = "j", mods = "ALT" }) },
+      { key = "k", mods = "NONE", action = act.SendKey({ key = "k", mods = "ALT" }) },
+      { key = "f", mods = "CTRL", action = act.SendKey({ key = "PageDown" }) },
+      { key = "b", mods = "CTRL", action = act.SendKey({ key = "PageUp" }) },
+
+      { key = "Escape", mods = "NONE", action = act.PopKeyTable },
+      { key = "q", mods = "NONE", action = act.PopKeyTable },
     },
 
   },
