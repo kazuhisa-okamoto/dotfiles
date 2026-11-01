@@ -13,14 +13,16 @@ local workspace_session = require("workspace_session")
 local M = {}
 
 -- 一覧でもステータスバーでもこの順に並べる (Tokyo Night の色)
+-- icon は一覧用、glyph はステータスバー用 (Nerd Font のアイコン)
+local nf = wezterm.nerdfonts
 local state_order = { "waiting", "error", "done", "running", "idle" }
 local states = {
-  waiting = { icon = "?", label = "確認待ち", color = "#e0af68" },
-  error = { icon = "✗", label = "エラー", color = "#f7768e" },
+  waiting = { icon = "?", glyph = nf.md_bell_ring, label = "確認待ち", color = "#e0af68" },
+  error = { icon = "✗", glyph = nf.md_alert_circle, label = "エラー", color = "#f7768e" },
   -- 完了してから、まだその pane を見ていない
-  done = { icon = "✓", label = "完了", color = "#9ece6a" },
-  running = { icon = "●", label = "実行中", color = "#7aa2f7" },
-  idle = { icon = "·", label = "待機", color = "#565f89" },
+  done = { icon = "✓", glyph = nf.md_check_circle, label = "完了", color = "#9ece6a" },
+  running = { icon = "●", glyph = nf.md_loading, label = "実行中", color = "#7aa2f7" },
+  idle = { icon = "·", glyph = nf.md_sleep, label = "待機", color = "#565f89" },
 }
 
 -- 完了した pane を見たら、その完了 (event_at) を見たことを覚えておき、待機として表示する
@@ -96,6 +98,31 @@ end
 ----------------------------------------------------
 -- ステータスバー
 ----------------------------------------------------
+-- タブと同じ斜めの端で囲んだ札を並べる
+local LEFT_EDGE = nf.ple_lower_right_triangle
+local RIGHT_EDGE = nf.ple_upper_left_triangle
+-- 実行中の札で回す。update-right-status (既定で1秒ごと) のたびに1コマ進む
+local SPINNER = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
+-- 先頭の「Claude」の札の色
+local HEADER_BG = "#3b4261"
+local HEADER_FG = "#c0caf5"
+-- 状態の札の文字色 (ターミナルの背景色と同じ)
+local CHIP_FG = "#1a1b26"
+
+local function add_segment(cells, bg, fg, text)
+  table.insert(cells, { Background = { Color = "none" } })
+  table.insert(cells, { Foreground = { Color = bg } })
+  table.insert(cells, { Text = LEFT_EDGE })
+  table.insert(cells, { Background = { Color = bg } })
+  table.insert(cells, { Foreground = { Color = fg } })
+  table.insert(cells, { Attribute = { Intensity = "Bold" } })
+  table.insert(cells, { Text = text })
+  table.insert(cells, "ResetAttributes")
+  table.insert(cells, { Background = { Color = "none" } })
+  table.insert(cells, { Foreground = { Color = bg } })
+  table.insert(cells, { Text = RIGHT_EDGE })
+end
+
 -- update-right-status から毎回呼ぶ。見ている pane の完了を既読にして、件数の表示を返す
 function M.status_cells(window, pane)
   local items = collect()
@@ -108,13 +135,28 @@ function M.status_cells(window, pane)
     counts[item.state] = (counts[item.state] or 0) + 1
   end
   local cells = {}
+  if #items == 0 then
+    return cells
+  end
+  -- 先頭に、動いている Claude Code の総数
+  add_segment(cells, HEADER_BG, HEADER_FG, string.format(" %s Claude %d ", nf.md_robot, #items))
   for _, state in ipairs(state_order) do
     -- 待機は数えても仕方がないので出さない
     if state ~= "idle" and counts[state] then
-      table.insert(cells, { Foreground = { Color = states[state].color } })
-      table.insert(cells, { Text = string.format(" %s %d ", states[state].icon, counts[state]) })
+      local glyph = states[state].glyph
+      if state == "running" then
+        glyph = SPINNER[os.time() % #SPINNER + 1]
+      end
+      table.insert(cells, { Text = " " })
+      add_segment(
+        cells,
+        states[state].color,
+        CHIP_FG,
+        string.format(" %s %s %d ", glyph, states[state].label, counts[state])
+      )
     end
   end
+  table.insert(cells, { Text = " " })
   return cells
 end
 
