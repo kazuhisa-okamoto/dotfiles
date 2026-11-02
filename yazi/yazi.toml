@@ -8,7 +8,8 @@ open_nvim_new_tab = [
 ]
 
 open_vscode = [
-	{ run = 'code "%s"', orphan = true, desc = "Open in VSCode", for = "windows" }
+	# ファイルは、それを含む git リポジトリのルートを workspace にして開く
+	{ run = 'code-root "%s"', orphan = true, desc = "Open in VSCode", for = "windows" }
 ]
 
 open_tablacus = [

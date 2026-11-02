@@ -94,6 +94,14 @@ $links = @(
         source = "yazi\yazi.toml"
         target = "$homedir\AppData\Roaming\yazi\config"
     }
+    @{
+        source = "bin\code-root.ps1"
+        target = "$homedir\.local\bin\code-root.ps1"
+    }
+    @{
+        source = "bin\code-root.cmd"
+        target = "$homedir\.local\bin\code-root.cmd"
+    }
 )
 
 #================================

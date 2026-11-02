@@ -397,6 +397,19 @@ function fcdg {
     if ($selected) { Set-Location $selected }
 }
 
+# VS Code: ファイルは、それを含む git リポジトリのルートを workspace にして開く (bin/code-root.ps1).
+# 対話中に打つ code だけを置き換える. git や他のツールが呼ぶ code.cmd はそのまま.
+# --wait などのオプション付きの呼び出しは code-root が本物の code にそのまま渡す.
+function code {
+    if (Get-Command code-root.ps1 -CommandType ExternalScript -ErrorAction SilentlyContinue) {
+        code-root.ps1 @args
+    }
+    else {
+        $realCode = Get-Command code -CommandType Application | Select-Object -First 1
+        & $realCode @args
+    }
+}
+
 # VS Codeで開く. 引数でファイル(-f)/ディレクトリ(-d)を指定.
 function fcode {
     param(
@@ -414,7 +427,7 @@ function fcode {
         fd . $roots --type $type --hidden --absolute-path $fdExcludeArgs
     } | fzf --header "Open with VS Code ($type)" --no-sort --no-select-1
 
-    if ($selected) { code $selected }
+    if ($selected) { code-root $selected }
 }
 
 # Neovimで開く
@@ -445,7 +458,7 @@ function fcodememo {
         fd . $roots --type f $fdExcludeArgs
     } | fzf --header "Open Memo (VS Code)" --no-sort --multi
 
-    if ($selected) { code $selected }
+    if ($selected) { code-root $selected }
 }
 
 # メモをNeovimで開く
@@ -533,7 +546,7 @@ function rgcode {
     $file, $line = rgf $Path
 
     if (Test-Path $file) {
-        code -g "${file}:${line}"
+        code-root -g "${file}:${line}"
     }
 }
 
