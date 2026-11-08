@@ -10,7 +10,11 @@ local key_table_labels = {
   activate_pane = { text = "PANE", color = "#9ece6a" },
 }
 
--- Show which key table is active and the Claude Code states in the status area
+-- 右端の workspace 名の札の色
+local WORKSPACE_BG = "#bb9af7"
+local WORKSPACE_FG = "#1a1b26"
+
+-- Show which key table is active, the Claude Code states and the workspace name in the status area
 wezterm.on("update-right-status", function(window, pane)
   local cells = {}
   local name = window:active_key_table()
@@ -26,6 +30,14 @@ wezterm.on("update-right-status", function(window, pane)
   for _, cell in ipairs(claude_status.status_cells(window, pane)) do
     table.insert(cells, cell)
   end
+  -- 右端に、この window の workspace 名
+  claude_status.add_segment(
+    cells,
+    WORKSPACE_BG,
+    WORKSPACE_FG,
+    string.format(" %s %s ", wezterm.nerdfonts.cod_window, window:active_workspace())
+  )
+  table.insert(cells, { Text = " " })
   window:set_right_status(wezterm.format(cells))
 end)
 

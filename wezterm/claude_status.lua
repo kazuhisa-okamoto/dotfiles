@@ -109,7 +109,8 @@ local HEADER_FG = "#c0caf5"
 -- 状態の札の文字色 (ターミナルの背景色と同じ)
 local CHIP_FG = "#1a1b26"
 
-local function add_segment(cells, bg, fg, text)
+-- keybinds.lua の workspace 名の札でも使う
+function M.add_segment(cells, bg, fg, text)
   table.insert(cells, { Background = { Color = "none" } })
   table.insert(cells, { Foreground = { Color = bg } })
   table.insert(cells, { Text = LEFT_EDGE })
@@ -139,7 +140,7 @@ function M.status_cells(window, pane)
     return cells
   end
   -- 先頭に、動いている Claude Code の総数
-  add_segment(cells, HEADER_BG, HEADER_FG, string.format(" %s Claude %d ", nf.md_robot, #items))
+  M.add_segment(cells, HEADER_BG, HEADER_FG, string.format(" %s Claude %d ", nf.md_robot, #items))
   for _, state in ipairs(state_order) do
     -- 待機は数えても仕方がないので出さない
     if state ~= "idle" and counts[state] then
@@ -148,7 +149,7 @@ function M.status_cells(window, pane)
         glyph = SPINNER[os.time() % #SPINNER + 1]
       end
       table.insert(cells, { Text = " " })
-      add_segment(
+      M.add_segment(
         cells,
         states[state].color,
         CHIP_FG,
