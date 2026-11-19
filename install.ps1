@@ -224,6 +224,42 @@ function New-SymbolicLinkSafe {
     }
 }
 
+function Install-VSCodeExtensions {
+    param([string]$listFile)
+
+    $listPath = Join-Path $reporoot $listFile
+    if (-not (Test-Path $listPath)) {
+        Write-Host "extension list not found: $listPath" -ForegroundColor Red
+        return
+    }
+
+    if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
+        Write-Warning "VS Code CLI 'code' not found in PATH; skipping extension install"
+        return
+    }
+
+    $wanted = Get-Content $listPath |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -and -not $_.StartsWith('#') }
+
+    # Extension IDs are case-insensitive; -contains compares case-insensitively.
+    $installed = @(code --list-extensions)
+
+    foreach ($id in $wanted) {
+        if ($installed -contains $id) {
+            continue
+        }
+
+        Write-Host "install vscode extension: $id"
+        if (-not $dryrun) {
+            code --install-extension $id
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Extension install failed: $id"
+            }
+        }
+    }
+}
+
 # ================================
 # Execution
 # ================================
@@ -231,5 +267,7 @@ function New-SymbolicLinkSafe {
 foreach ($link in $links) {
     New-SymbolicLinkSafe $link.source $link.target
 }
+
+Install-VSCodeExtensions "vscode\extensions.txt"
 
 Write-Host "Done"

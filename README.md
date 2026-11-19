@@ -37,3 +37,13 @@ Existing files at a target path are renamed to `<name>.bak.<yyyyMMdd-HHmmss>` be
 ## Configuration paths
 
 Every source-to-target mapping is defined in the `$links` array near the top of `install.ps1`. Edit that array to add, remove, or relocate a configuration file.
+
+## VS Code extensions
+
+`install.ps1` also installs every extension listed in `vscode/extensions.txt` (one extension ID per line) that is not installed yet, using the `code` CLI. Extensions already installed are skipped, and extensions not in the list are left untouched. With `-DryRun`, it only prints the extensions it would install.
+
+To refresh the list from the current PC:
+
+```powershell
+code --list-extensions > vscode\extensions.txt
+```
