@@ -28,7 +28,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1 -DryRun
 powershell -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1
 ```
 
-3. Open a new terminal so the new PATH takes effect, then run `install.ps1` as administrator (symbolic links require elevation).
+3. Open a new terminal so the new PATH takes effect, then run `install.ps1` with `pwsh`. Creating symbolic links needs one of:
+
+   - administrator rights (run the terminal as administrator), or
+   - Windows Developer Mode, which lets a normal user create symbolic links. Turn it on once in Settings > System > For developers > Developer Mode (this needs an administrator to approve), then run `install.ps1` as a normal user. It must be `pwsh` (PowerShell 7): Windows PowerShell 5.1 still needs administrator rights even with Developer Mode.
+
+   If neither applies, `install.ps1` stops with an explanation. To use links a normal user can create instead, run it with `-NoSymlink` (see "Without symbolic links" below).
 
 ```powershell
 # Preview only: prints every action without touching the filesystem
@@ -44,9 +49,33 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 Existing files at a target path are renamed to `<name>.bak.<yyyyMMdd-HHmmss>` before the link is created. Existing symbolic links are removed without a backup and recreated, so re-running the script is safe.
 
+### Without symbolic links
+
+With `-NoSymlink`, `install.ps1` uses these instead of symbolic links. A normal user can create them, so this works without administrator rights or Developer Mode. It is used only when `-NoSymlink` is given.
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -NoSymlink -DryRun
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -NoSymlink
+```
+
+| Configuration | How it is linked |
+|---|---|
+| `nvim`, `wezterm`, `yazi` | The whole configuration folder (`%LOCALAPPDATA%\nvim`, `~\.config\wezterm`, `%APPDATA%\yazi\config`) becomes a directory junction to the repository folder |
+| `vscode\settings.json`, `vscode\keybindings.json` | Hard links (VS Code keeps other data in the same folder, so it cannot be a junction) |
+| PowerShell profile | `$PROFILE` becomes a one-line loader that dot-sources the repository's profile |
+| Oh My Posh theme | Not linked: the profile reads `oh_my_posh\mytheme.omp.json` from the repository |
+| `bin\` | Added to the user PATH |
+
+Notes:
+
+- Files an app writes into a junction folder end up in the repository folder. `.gitignore` excludes the known ones (`nvim/lazy-lock.json`, the yazi `plugins`, `flavors` and `bookmark`). When the old folder is backed up, `lazy-lock.json` and the yazi `bookmark` are copied over into the repository folder.
+- Hard links need the repository and the VS Code settings on the same drive.
+- git replaces a file when it changes it, which cuts a hard link. Run `install.ps1` again after a `git pull` that changes `vscode\`. If the VS Code side differs from the repository by then, it is backed up first.
+- Running `install.ps1` later without `-NoSymlink` (with administrator rights or Developer Mode) removes the junctions and creates the symbolic links instead.
+
 ## Configuration paths
 
-Every source-to-target mapping is defined in the `$links` array near the top of `install.ps1`. Edit that array to add, remove, or relocate a configuration file.
+Every source-to-target mapping is defined in the `$links` array near the top of `install.ps1`. Edit that array to add, remove, or relocate a configuration file. Without symbolic links, the `$fallback*` definitions below it are used instead.
 
 ## VS Code extensions
 

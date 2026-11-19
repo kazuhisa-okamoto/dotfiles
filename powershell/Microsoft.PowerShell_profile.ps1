@@ -1,7 +1,14 @@
 
 # Path
 # user_path.ps1に$notedir, $mydirsを定義
-$profile_dir = Split-Path -Parent (Get-Item $PROFILE).Target
+# $profile_dir はリポジトリの powershell フォルダー。$PROFILE はこのファイルへのシンボリックリンクか、
+# (install.ps1 を管理者権限・開発者モードなしで実行したときは) このファイルを読み込むだけのファイル
+$profile_target = (Get-Item $PROFILE).Target
+if ($profile_target) {
+    $profile_dir = Split-Path -Parent $profile_target
+} else {
+    $profile_dir = $PSScriptRoot
+}
 $user_path_file = Join-Path $profile_dir "user_path.ps1"
 $mydirs = @(".")
 if (Test-Path $user_path_file) {
@@ -72,7 +79,12 @@ if (Get-Command Set-PSReadLineKeyHandler -ErrorAction SilentlyContinue) {
 
 # Oh My Posh
 $ErrorActionPreference = 'SilentlyContinue' # デフォルトpowershellのエラー無視
-oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\mytheme.omp.json" | Invoke-Expression
+# テーマはリポジトリのものを直接読む (無ければ従来どおり POSH_THEMES_PATH から)
+$omp_theme = Join-Path (Split-Path -Parent $profile_dir) "oh_my_posh\mytheme.omp.json"
+if (-not (Test-Path $omp_theme)) {
+    $omp_theme = "$env:POSH_THEMES_PATH\mytheme.omp.json"
+}
+oh-my-posh init pwsh --config $omp_theme | Invoke-Expression
 $ErrorActionPreference = 'Continue'
 
 # 既存の Set-Location をラップ

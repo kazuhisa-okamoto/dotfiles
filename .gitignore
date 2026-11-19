@@ -1,1 +1,8 @@
 user_path.ps1
+
+# Written by the apps into their config folders. Without symbolic links,
+# install.ps1 makes these folders junctions to the repository, so they land here.
+/nvim/lazy-lock.json
+/yazi/plugins/
+/yazi/flavors/
+/yazi/bookmark
