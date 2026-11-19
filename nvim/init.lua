@@ -26,15 +26,17 @@ vim.opt.expandtab = true   -- タブをスペースに変換
 --  (IME制御: zenhan.exe)
 local im_select_group = vim.api.nvim_create_augroup("IMSelect", { clear = true })
 
-local home = vim.fn.expand("~")
-local zenhan = vim.fs.joinpath(home, "bin/zenhan/zenhan.exe")
-vim.api.nvim_create_autocmd({ "InsertLeave", "CmdlineLeave" }, {
-  group = im_select_group,
-  pattern = "*",
-  callback = function()
-    vim.fn.system({ zenhan, "0" })
-  end,
-})
+-- zenhan は scoop で入れて PATH から呼ぶ (scoop install zenhan)
+local zenhan = vim.fn.exepath("zenhan")
+if zenhan ~= "" then
+  vim.api.nvim_create_autocmd({ "InsertLeave", "CmdlineLeave" }, {
+    group = im_select_group,
+    pattern = "*",
+    callback = function()
+      vim.fn.system({ zenhan, "0" })
+    end,
+  })
+end
 
 -- ====================================================
 -- キーバインド設定
