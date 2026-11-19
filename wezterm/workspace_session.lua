@@ -27,6 +27,49 @@ local panes_dir = session_dir .. "\\panes"
 -- 復元した pane で nvim / claude を起動するシェル (config.default_prog)
 local shell = { "pwsh.exe" }
 
+-- ほかの wezterm-gui がすでに動いているときに起動した WezTerm (2 つ目) か。
+-- 2 つ目は目印ファイルの置き場所を 1 つ目と共有してしまうので、この仕組みを使わない
+-- (起動時に目印を消さない・復元しない・保存しない・nvim / claude に目印を書かせない)。
+-- 起動して最初に設定を読んだとき (apply_to_config) に 1 回だけ決め、設定を読み直しても変えない
+local function is_secondary()
+  return wezterm.GLOBAL.workspace_session_secondary == true
+end
+
+local function is_gui_process()
+  local ok, info = pcall(wezterm.procinfo.get_info_for_pid, wezterm.procinfo.pid())
+  return ok and info and info.executable and info.executable:lower():match("wezterm%-gui%.exe$") ~= nil
+end
+
+local function other_gui_running()
+  local ok, stdout = wezterm.run_child_process({
+    "tasklist.exe", "/FI", "IMAGENAME eq wezterm-gui.exe", "/FO", "CSV", "/NH",
+  })
+  if not ok then
+    return false
+  end
+  local count = 0
+  for _ in stdout:lower():gmatch('"wezterm%-gui%.exe"') do
+    count = count + 1
+  end
+  -- この WezTerm 自身も数に入る
+  return count > 1
+end
+
+-- 起動したばかりの WezTerm はまだ window を持っていない。window があるのに未判定なのは、
+-- この判定を入れる前から動いている WezTerm が設定を読み直したときなので、2 つ目ではない
+local function has_windows()
+  local ok, windows = pcall(mux.all_windows)
+  return ok and windows and #windows > 0
+end
+
+-- run_child_process は require で読み込んでいる最中には呼べない
+-- (attempt to yield across a C-call boundary) ので、apply_to_config から呼ぶ
+local function decide_secondary()
+  if wezterm.GLOBAL.workspace_session_secondary == nil and is_gui_process() then
+    wezterm.GLOBAL.workspace_session_secondary = not has_windows() and other_gui_running()
+  end
+end
+
 ----------------------------------------------------
 -- ファイル操作
 ----------------------------------------------------
@@ -105,6 +148,10 @@ end
 -- panes/ の目印ファイルを { ["<pane_id>"] = { nvim = {...}, claude = {...} } } の形で読む
 local function read_markers()
   local markers = {}
+  -- 2 つ目の WezTerm から見ると、目印は 1 つ目の pane のもの
+  if is_secondary() then
+    return markers
+  end
   for _, path in ipairs(list_dir(panes_dir)) do
     local pane_id, kind = path:match("(%d+)%.(%a+)%.json$")
     if pane_id then
@@ -176,6 +223,10 @@ end
 
 -- force が false なら、前回保存したときから変わっていなければ書かない
 function M.save(force)
+  -- 2 つ目の WezTerm の画面で、1 つ目が保存した内容を上書きしない
+  if is_secondary() then
+    return false
+  end
   local state = snapshot()
   -- 終了処理の途中などで window が無いときに、保存済みの内容を空で上書きしない
   if #state.windows == 0 then
@@ -194,6 +245,10 @@ end
 
 function M.save_action()
   return wezterm.action_callback(function(window, pane)
+    if is_secondary() then
+      window:toast_notification("WezTerm", "ほかの WezTerm が動いているあいだに起動したので、この WezTerm では保存しません", nil, 5000)
+      return
+    end
     if M.save(true) then
       -- 手動で保存したら、それ以降は自動保存も有効にする
       wezterm.GLOBAL.workspace_session_autosave = true
@@ -411,10 +466,13 @@ end
 ----------------------------------------------------
 function M.apply_to_config(config)
   shell = config.default_prog or shell
+  decide_secondary()
 
-  -- nvim と Claude Code の hook が目印ファイルの置き場所を知るための環境変数
+  -- nvim と Claude Code の hook が目印ファイルの置き場所を知るための環境変数。
+  -- 2 つ目の WezTerm では空にして、目印を書かせない (1 つ目の WezTerm の中から起動したときに
+  -- 受け継いだ値も空で上書きする)
   config.set_environment_variables = config.set_environment_variables or {}
-  config.set_environment_variables.WEZTERM_WORKSPACE_SESSION_DIR = session_dir
+  config.set_environment_variables.WEZTERM_WORKSPACE_SESSION_DIR = is_secondary() and "" or session_dir
 
   -- まだ一度も保存していなければ、この機能を入れる前から動いている WezTerm でも自動保存してよい
   if wezterm.GLOBAL.workspace_session_autosave == nil and not file_exists(state_file) then
@@ -422,6 +480,12 @@ function M.apply_to_config(config)
   end
 
   wezterm.on("gui-startup", function(cmd)
+    -- 2 つ目の WezTerm は、1 つ目の目印を消さず、復元もしない (ふつうの新しい window になる)
+    if is_secondary() then
+      wezterm.log_info("workspace_session: ほかの wezterm-gui が動いているので復元・保存しない")
+      wezterm.GLOBAL.workspace_session_autosave = false
+      return
+    end
     -- `wezterm start -- <prog>` や `--cwd` のように起動のしかたを指定されたときは復元しない。
     -- このとき自動保存もしないので、保存済みの workspace は上書きされない
     if cmd and (cmd.args or cmd.cwd) then

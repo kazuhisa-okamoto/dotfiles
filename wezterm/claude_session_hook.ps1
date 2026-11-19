@@ -9,7 +9,8 @@
 
 $dir = $env:WEZTERM_WORKSPACE_SESSION_DIR
 $paneId = $env:WEZTERM_PANE
-# WezTerm の外、または nvim の :terminal の中 ($NVIM が入る) で動いているときは何もしない
+# WezTerm の外、または nvim の :terminal の中 ($NVIM が入る) で動いているときは何もしない。
+# ほかの WezTerm が動いているあいだに起動した WezTerm は $dir を空にしている
 if (-not $dir -or -not $paneId -or $env:NVIM) { exit 0 }
 
 $hook = $null

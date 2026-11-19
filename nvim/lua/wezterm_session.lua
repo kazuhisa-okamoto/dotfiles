@@ -37,8 +37,9 @@ end
 function M.setup()
   local dir = vim.env.WEZTERM_WORKSPACE_SESSION_DIR
   local pane_id = vim.env.WEZTERM_PANE
-  -- WezTerm の外や、nvim の :terminal の中 ($NVIM が入る) で起動したときは何もしない
-  if not dir or not pane_id or vim.env.NVIM then
+  -- WezTerm の外や、nvim の :terminal の中 ($NVIM が入る) で起動したときは何もしない。
+  -- ほかの WezTerm が動いているあいだに起動した WezTerm は、この変数を空にしている
+  if not dir or dir == "" or not pane_id or vim.env.NVIM then
     return
   end
 
