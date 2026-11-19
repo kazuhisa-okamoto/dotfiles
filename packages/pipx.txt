@@ -1,0 +1,3 @@
+# pipx packages, one per line. Installed by bootstrap.ps1.
+pipreqs
+poetry

@@ -1,0 +1,6 @@
+# scoop buckets: <name> [<git url>]
+# The url can be omitted for buckets scoop knows by name (main, extras, versions, ...).
+main
+extras
+versions
+nerd-fonts https://github.com/matthewjberger/scoop-nerd-fonts

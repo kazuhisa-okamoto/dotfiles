@@ -260,6 +260,22 @@ function Install-VSCodeExtensions {
     }
 }
 
+function Install-YaziPackages {
+    # Installs the plugins listed in yazi\package.toml (linked above).
+    if (-not (Get-Command ya -ErrorAction SilentlyContinue)) {
+        Write-Warning "yazi CLI 'ya' not found in PATH; skipping yazi packages"
+        return
+    }
+
+    Write-Host "install yazi packages: ya pkg install"
+    if (-not $dryrun) {
+        ya pkg install
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "ya pkg install failed"
+        }
+    }
+}
+
 # ================================
 # Execution
 # ================================
@@ -269,5 +285,6 @@ foreach ($link in $links) {
 }
 
 Install-VSCodeExtensions "vscode\extensions.txt"
+Install-YaziPackages
 
 Write-Host "Done"

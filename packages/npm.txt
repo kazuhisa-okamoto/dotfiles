@@ -1,0 +1,4 @@
+# npm global packages, one per line. Installed by bootstrap.ps1.
+ccusage
+pyright
+repomix

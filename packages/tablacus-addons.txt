@@ -1,0 +1,18 @@
+# Tablacus Explorer add-ons not bundled with the app, one add-on ID per line.
+# bootstrap.ps1 downloads the missing ones from
+# https://tablacus.github.io/TablacusExplorerAddons/ into the app's addons folder.
+# scoop does not keep that folder across updates, so run bootstrap.ps1 again
+# after `scoop update tablacus-explorer`.
+addtabs2fav
+closebutton
+darkmode
+favoritesnewtab
+foldersettings
+split
+split3
+split6
+switchpane
+switchprevpane
+tabgroups
+tabname
+tooltippreview
