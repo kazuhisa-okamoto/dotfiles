@@ -238,10 +238,34 @@ function Set-ClaudeGitBashPath {
     }
 }
 
+function Test-PlannedInDryRun {
+    # With -DryRun no scoop app is installed, so the command of an app listed in
+    # packages\scoop-apps.txt can be missing although a real run has it by now.
+    param(
+        [string]$app,
+        [string[]]$apps
+    )
+
+    if (-not $dryrun) {
+        return $false
+    }
+    return [bool]($apps | Where-Object { ($_ -split '/')[-1] -ieq $app })
+}
+
 function Install-PipxPackages {
-    param([string[]]$packages)
+    param(
+        [string[]]$packages,
+        [string[]]$apps
+    )
 
     if (-not (Get-Command pipx -ErrorAction SilentlyContinue)) {
+        if (Test-PlannedInDryRun "pipx" $apps) {
+            Write-Host "pipx is not installed yet; after scoop installs it:"
+            foreach ($package in $packages) {
+                Write-Host "install pipx package: $package"
+            }
+            return
+        }
         Write-Warning "pipx not found; skipping pipx packages"
         return
     }
@@ -270,9 +294,19 @@ function Install-PipxPackages {
 }
 
 function Install-NpmPackages {
-    param([string[]]$packages)
+    param(
+        [string[]]$packages,
+        [string[]]$apps
+    )
 
     if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        if (Test-PlannedInDryRun "nodejs" $apps) {
+            Write-Host "npm is not installed yet; after scoop installs nodejs:"
+            foreach ($package in $packages) {
+                Write-Host "install npm package: $package"
+            }
+            return
+        }
         Write-Warning "npm not found; skipping npm packages"
         return
     }
@@ -328,7 +362,7 @@ Install-TablacusAddons (Read-ListFile "packages\tablacus-addons.txt")
 Set-ClaudeGitBashPath
 
 Update-SessionPath
-Install-PipxPackages (Read-ListFile "packages\pipx.txt")
-Install-NpmPackages (Read-ListFile "packages\npm.txt")
+Install-PipxPackages (Read-ListFile "packages\pipx.txt") $apps
+Install-NpmPackages (Read-ListFile "packages\npm.txt") $apps
 
 Write-Host "Done"
