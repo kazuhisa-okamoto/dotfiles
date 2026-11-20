@@ -15,6 +15,8 @@
       packages\tablacus-addons.txt that are missing (scoop drops them on
       every update of the app, so run this again after updating it).
     - Points Claude Code at scoop's Git Bash.
+    - Points yazi at the file command of scoop's Git (YAZI_FILE_ONE), since
+      scoop's own file does not accept the options yazi uses.
 
     Nothing already installed is updated or removed.
     It runs on Windows PowerShell 5.1, since pwsh itself comes from scoop.
@@ -238,6 +240,28 @@ function Set-ClaudeGitBashPath {
     }
 }
 
+function Set-YaziFileOne {
+    # yazi runs `file -bL --mime-type` to tell a file's type before it opens
+    # it. scoop's file (main/file) does not accept -L, so yazi gets no type
+    # and opening a file does nothing (folders still open). The file that
+    # comes with Git for Windows accepts it.
+    $scoopdir = if ($env:SCOOP) { $env:SCOOP } else { Join-Path $env:USERPROFILE "scoop" }
+    $file = Join-Path $scoopdir "apps\git\current\usr\bin\file.exe"
+
+    if ([Environment]::GetEnvironmentVariable('YAZI_FILE_ONE', 'User')) {
+        return
+    }
+    if (-not $dryrun -and -not (Test-Path $file)) {
+        Write-Warning "file.exe not found in scoop's Git; yazi may not open files"
+        return
+    }
+
+    Write-Host "set user environment variable: YAZI_FILE_ONE=$file"
+    if (-not $dryrun) {
+        [Environment]::SetEnvironmentVariable('YAZI_FILE_ONE', $file, 'User')
+    }
+}
+
 function Test-PlannedInDryRun {
     # With -DryRun no scoop app is installed, so the command of an app listed in
     # packages\scoop-apps.txt can be missing although a real run has it by now.
@@ -360,6 +384,7 @@ foreach ($app in $apps) {
 Add-Te64Shim
 Install-TablacusAddons (Read-ListFile "packages\tablacus-addons.txt")
 Set-ClaudeGitBashPath
+Set-YaziFileOne
 
 Update-SessionPath
 Install-PipxPackages (Read-ListFile "packages\pipx.txt") $apps
