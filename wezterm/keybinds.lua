@@ -143,7 +143,9 @@ return {
     { key = "z", mods = "LEADER", action = act.TogglePaneZoomState },
 
     -- フォントサイズ切替
+    -- "+" は Shift を伴って入力されるので CTRL と CTRL|SHIFT の両方を登録する
     { key = "+", mods = "CTRL", action = act.IncreaseFontSize },
+    { key = "+", mods = "CTRL|SHIFT", action = act.IncreaseFontSize },
     { key = "-", mods = "CTRL", action = act.DecreaseFontSize },
     -- フォントサイズのリセット
     { key = "0", mods = "CTRL", action = act.ResetFontSize },
