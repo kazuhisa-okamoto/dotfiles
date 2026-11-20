@@ -169,6 +169,14 @@ $links = @(
         source = "bin\code-root.cmd"
         target = "$homedir\.local\bin\code-root.cmd"
     }
+    @{
+        source = "bin\vs.ps1"
+        target = "$homedir\.local\bin\vs.ps1"
+    }
+    @{
+        source = "bin\vs.cmd"
+        target = "$homedir\.local\bin\vs.cmd"
+    }
 )
 
 # Without symbolic links: each whole configuration folder becomes a directory

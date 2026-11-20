@@ -12,12 +12,18 @@ open_vscode = [
 	{ run = 'code-root "%s"', orphan = true, desc = "Open in VSCode", for = "windows" }
 ]
 
+open_vs = [
+	# ソリューションファイル (.sln / .slnx) を探して Visual Studio で開く (bin/vs.ps1)
+	# 複数見つかると fzf で選ぶので block. 見つからないときはメッセージを読めるよう pause
+	{ run = 'vs "%s" || pause', block = true, desc = "Open solution in Visual Studio", for = "windows" }
+]
+
 open_tablacus = [
 	{ run = 'TE64.exe "%s"', orphan = true, desc = "Open in Tablacus", for = "windows" }
 ]
 
 [open]
 rules = [
-    { url = "*/", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode", "open_tablacus" ] },
-    { url = "*", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode" ] }
+    { url = "*/", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode", "open_vs", "open_tablacus" ] },
+    { url = "*", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode", "open_vs" ] }
 ]
