@@ -13,6 +13,8 @@ main/mingw
 main/neovim
 main/nodejs
 main/oh-my-posh
+# pipx needs python on PATH when it installs, so python312 comes first.
+versions/python312
 main/pipx
 main/pwsh
 main/ripgrep
@@ -24,6 +26,5 @@ main/zoxide
 extras/lazygit
 extras/tablacus-explorer
 extras/wezterm
-versions/python312
 nerd-fonts/JetBrainsMono-NF
 nerd-fonts/Meslo-NF
