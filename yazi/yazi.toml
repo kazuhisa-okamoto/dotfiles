@@ -18,6 +18,12 @@ open_vs = [
 	{ run = 'vs "%s" || pause', block = true, desc = "Open solution in Visual Studio", for = "windows" }
 ]
 
+open_system = [
+	# エクスプローラでダブルクリックしたのと同じ (既定のアプリで開く)
+	# start の最初の "" はウィンドウタイトル. 省くと空白を含むパスで失敗する
+	{ run = 'start "" "%s"', orphan = true, desc = "Open with default app", for = "windows" }
+]
+
 open_tablacus = [
 	{ run = 'TE64.exe "%s"', orphan = true, desc = "Open in Tablacus", for = "windows" }
 ]
@@ -25,5 +31,7 @@ open_tablacus = [
 [open]
 rules = [
     { url = "*/", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode", "open_vs", "open_tablacus" ] },
-    { url = "*", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode", "open_vs" ] }
+    # Office / PDF / 画像などは既定アプリを優先 (rules は上から順に最初にマッチしたものが使われる)
+    { url = "*.{ppt,pptx,doc,docx,xls,xlsx,xlsm,pdf,png,jpg,jpeg}", use = [ "open_system", "open_nvim" ] },
+    { url = "*", use = [ "open_nvim", "open_nvim_new_tab", "open_vscode", "open_vs", "open_system" ] }
 ]
