@@ -16,12 +16,16 @@ local function normalize(path)
   return vim.fs.normalize(path):lower()
 end
 
--- WezTerm が保存した state.json から参照されていない、古いセッションファイルを消す
+-- WezTerm が保存した state.json と bookmarks.json (閉じた workspace のブックマーク) の
+-- どちらからも参照されていない、古いセッションファイルを消す
 local function remove_stale_sessions(dir, session_dir)
-  local f = io.open(vim.fs.joinpath(dir, "state.json"), "rb")
-  local state = f and f:read("*a") or ""
-  if f then
-    f:close()
+  local state = ""
+  for _, name in ipairs({ "state.json", "bookmarks.json" }) do
+    local f = io.open(vim.fs.joinpath(dir, name), "rb")
+    if f then
+      state = state .. f:read("*a")
+      f:close()
+    end
   end
   local now = os.time()
   for name, kind in vim.fs.dir(session_dir) do

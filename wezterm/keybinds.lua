@@ -70,12 +70,8 @@ return {
         description = "(wezterm) Create new workspace:",
         action = wezterm.action_callback(function(window, pane, line)
           if line then
-            window:perform_action(
-              act.SwitchToWorkspace({
-                name = line,
-              }),
-              pane
-            )
+            -- ブックマーク済みの名前なら、ブックマークから開く
+            require("workspace_session").switch_to(window, pane, line)
           end
         end),
       }),
@@ -84,6 +80,11 @@ return {
     { key = "S", mods = "LEADER|SHIFT", action = require("workspace_session").save_action() },
     -- すべての workspace を保存して WezTerm を終了 (window を閉じるとその workspace だけが閉じる)
     { key = "q", mods = "LEADER", action = require("workspace_session").quit_action() },
+    -- workspace のブックマーク (workspace_session.lua)
+    -- 一覧から開く / 今の workspace を登録 / 登録してから閉じる (メモリを空ける)
+    { key = "b", mods = "LEADER", action = require("workspace_session").bookmarks_action() },
+    { key = "B", mods = "LEADER|SHIFT", action = require("workspace_session").bookmark_action() },
+    { key = "W", mods = "LEADER|SHIFT", action = require("workspace_session").close_workspace_action() },
     -- すべての workspace の Claude Code の一覧を開き、選んだ pane に移る
     { key = "c", mods = "LEADER", action = claude_status.selector_action() },
     -- Debug Overlay / REPL を開く

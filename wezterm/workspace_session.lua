@@ -5,6 +5,12 @@
 -- 保存するとき: 自動 (autosave_interval_seconds ごと。変化がなければ書かない) と leader + S
 -- 復元するとき: WezTerm の起動時 (gui-startup)
 --
+-- ブックマーク: workspace を名前で bookmarks.json に登録しておき、閉じたあとでも一覧から開き直せる。
+--   leader + B: 今の workspace を登録 (登録済みなら上書き)
+--   leader + b: 一覧から開く (開いていればそこへ切り替える) / 一覧から削除
+--   leader + W: 今の workspace を登録してから閉じる (メモリを空ける)
+--   登録済みの workspace が開いているあいだは、自動保存のたびにブックマークの中身も更新する
+--
 -- nvim と claude は、自分がどの pane で動いているかを環境変数 WEZTERM_PANE から知り、
 -- panes/<pane_id>.nvim.json・panes/<pane_id>.claude.json という目印ファイルを書く。
 --   nvim:   nvim/lua/wezterm_session.lua (編集状態は :mksession で nvim/<pid>.vim に書く)
@@ -22,6 +28,7 @@ M.autosave_interval_seconds = 10
 local session_dir = os.getenv("WEZTERM_WORKSPACE_SESSION_DIR")
   or ((os.getenv("LOCALAPPDATA") or wezterm.home_dir) .. "\\wezterm\\workspace_session")
 local state_file = session_dir .. "\\state.json"
+local bookmarks_file = session_dir .. "\\bookmarks.json"
 local panes_dir = session_dir .. "\\panes"
 
 -- 復元した pane で nvim / claude を起動するシェル (config.default_prog)
@@ -111,8 +118,8 @@ local function list_dir(path)
   return ok and entries or {}
 end
 
-local function write_state(json)
-  local tmp = state_file .. ".tmp"
+local function write_file(path, json)
+  local tmp = path .. ".tmp"
   local f = io.open(tmp, "wb")
   if not f then
     wezterm.run_child_process({ "cmd.exe", "/c", "mkdir", session_dir })
@@ -125,10 +132,10 @@ local function write_state(json)
   f:write(json)
   f:close()
   -- Windows の os.rename は移動先があると失敗するので先に消す
-  os.remove(state_file)
-  local ok, err = os.rename(tmp, state_file)
+  os.remove(path)
+  local ok, err = os.rename(tmp, path)
   if not ok then
-    wezterm.log_error("workspace_session: " .. state_file .. " に置けない: " .. tostring(err))
+    wezterm.log_error("workspace_session: " .. path .. " に置けない: " .. tostring(err))
   end
   return ok
 end
@@ -221,6 +228,75 @@ local function snapshot()
   return { version = 1, active_workspace = mux.get_active_workspace(), windows = windows }
 end
 
+----------------------------------------------------
+-- ブックマークの読み書き
+----------------------------------------------------
+-- bookmarks.json: { version = 1, bookmarks = { { name = "<workspace>", windows = {...} }, ... } }
+-- windows は state.json の windows のうち、その workspace のもの
+local function read_bookmarks()
+  local data = read_json(bookmarks_file)
+  return (data and data.bookmarks) or {}
+end
+
+-- 前回書いたときから変わっていなければ書かない
+local function write_bookmarks(list)
+  table.sort(list, function(a, b)
+    return a.name < b.name
+  end)
+  local json = wezterm.json_encode({ version = 1, bookmarks = list })
+  if json == wezterm.GLOBAL.workspace_session_bookmarks_json then
+    return true
+  end
+  if not write_file(bookmarks_file, json) then
+    return false
+  end
+  wezterm.GLOBAL.workspace_session_bookmarks_json = json
+  return true
+end
+
+local function find_bookmark(list, name)
+  for i, bookmark in ipairs(list) do
+    if bookmark.name == name then
+      return i
+    end
+  end
+  return nil
+end
+
+local function workspace_windows(state, name)
+  local windows = {}
+  for _, saved_window in ipairs(state.windows) do
+    if saved_window.workspace == name then
+      table.insert(windows, saved_window)
+    end
+  end
+  return windows
+end
+
+local function is_open(name)
+  for _, open_name in ipairs(mux.get_workspace_names()) do
+    if open_name == name then
+      return true
+    end
+  end
+  return false
+end
+
+-- 開いている登録済みの workspace のブックマークを、今の状態で更新する。
+-- 閉じている最中の workspace (pane が少しずつ消えていく) は更新しない
+local function update_open_bookmarks(state)
+  local list = read_bookmarks()
+  for _, bookmark in ipairs(list) do
+    if bookmark.name ~= wezterm.GLOBAL.workspace_session_closing then
+      local windows = workspace_windows(state, bookmark.name)
+      if #windows > 0 then
+        bookmark.windows = windows
+      end
+    end
+  end
+  write_bookmarks(list)
+end
+
 -- force が false なら、前回保存したときから変わっていなければ書かない
 function M.save(force)
   -- 2 つ目の WezTerm の画面で、1 つ目が保存した内容を上書きしない
@@ -232,11 +308,14 @@ function M.save(force)
   if #state.windows == 0 then
     return false
   end
+  if file_exists(bookmarks_file) then
+    update_open_bookmarks(state)
+  end
   local json = wezterm.json_encode(state)
   if not force and json == wezterm.GLOBAL.workspace_session_last_json then
     return true
   end
-  if not write_state(json) then
+  if not write_file(state_file, json) then
     return false
   end
   wezterm.GLOBAL.workspace_session_last_json = json
@@ -392,9 +471,10 @@ local function build_layout(mux_pane, panes, created)
   build_layout(new_pane, second, created)
 end
 
-local function restore(state)
+-- windows を作り、各 window のアクティブなタブの tab_id を返す
+local function restore_windows(windows)
   local active_tab_ids = {}
-  for _, saved_window in ipairs(state.windows or {}) do
+  for _, saved_window in ipairs(windows) do
     local mux_window, active_tab
     for _, saved_tab in ipairs(saved_window.tabs or {}) do
       if #(saved_tab.panes or {}) > 0 then
@@ -433,12 +513,16 @@ local function restore(state)
       table.insert(active_tab_ids, active_tab:tab_id())
     end
   end
+  -- GUI の初期化 (workspace の切り替え) で各 window のアクティブなタブが先頭に戻されるので、
+  -- GUI が動き出してから (次の update-right-status で) もう一度切り替える
+  wezterm.GLOBAL.workspace_session_pending_tabs = table.concat(active_tab_ids, ",")
+end
+
+local function restore(state)
+  restore_windows(state.windows or {})
   if state.active_workspace then
     mux.set_active_workspace(state.active_workspace)
   end
-  -- GUI の初期化で各 window のアクティブなタブが先頭に戻されるので、GUI が動き出してから
-  -- (最初の update-right-status で) もう一度切り替える
-  wezterm.GLOBAL.workspace_session_pending_tabs = table.concat(active_tab_ids, ",")
 end
 
 local function activate_pending_tabs()
@@ -459,6 +543,234 @@ local function clear_markers()
   for _, path in ipairs(list_dir(panes_dir)) do
     os.remove(path)
   end
+end
+
+----------------------------------------------------
+-- ブックマークの操作
+----------------------------------------------------
+local function toast(window, message, ms)
+  window:toast_notification("WezTerm", message, nil, ms or 3000)
+end
+
+local function secondary_toast(window)
+  toast(window, "ほかの WezTerm が動いているあいだに起動したので、この WezTerm ではブックマークを使えません", 5000)
+end
+
+-- 今の状態で name のブックマークを登録 / 上書きする
+local function bookmark_workspace(name)
+  local windows = workspace_windows(snapshot(), name)
+  if #windows == 0 then
+    return false
+  end
+  local list = read_bookmarks()
+  local i = find_bookmark(list, name)
+  if i then
+    list[i].windows = windows
+  else
+    table.insert(list, { name = name, windows = windows })
+  end
+  return write_bookmarks(list), i ~= nil
+end
+
+-- name の workspace に切り替える。開いていなくて登録済みなら、ブックマークから作り直す。
+-- 登録していなければ新しい workspace になる (SwitchToWorkspace と同じ)
+function M.switch_to(window, pane, name)
+  if not is_open(name) and not is_secondary() then
+    local list = read_bookmarks()
+    local i = find_bookmark(list, name)
+    if i then
+      local windows = {}
+      for _, saved_window in ipairs(list[i].windows or {}) do
+        saved_window.workspace = name
+        table.insert(windows, saved_window)
+      end
+      local ok, err = pcall(restore_windows, windows)
+      if not ok then
+        wezterm.log_error("workspace_session: " .. name .. " を開けない: " .. tostring(err))
+        toast(window, name .. " を開けませんでした (Debug Overlay を参照)", 5000)
+      end
+    end
+  end
+  window:perform_action(wezterm.action.SwitchToWorkspace({ name = name }), pane)
+end
+
+function M.bookmark_action()
+  return wezterm.action_callback(function(window, pane)
+    if is_secondary() then
+      return secondary_toast(window)
+    end
+    local name = window:active_workspace()
+    local ok, updated = bookmark_workspace(name)
+    if ok then
+      toast(window, string.format("%s を%s", name, updated and "ブックマークし直しました" or "ブックマークしました"))
+    else
+      toast(window, name .. " をブックマークできませんでした (Debug Overlay を参照)", 5000)
+    end
+  end)
+end
+
+local function bookmark_label(bookmark)
+  local tabs, cwd = 0, nil
+  for _, saved_window in ipairs(bookmark.windows or {}) do
+    for _, saved_tab in ipairs(saved_window.tabs or {}) do
+      tabs = tabs + 1
+      for _, saved_pane in ipairs(saved_tab.panes or {}) do
+        cwd = cwd or saved_pane.cwd
+      end
+    end
+  end
+  return string.format(
+    "%s %s  (%d tabs)  %s",
+    is_open(bookmark.name) and wezterm.nerdfonts.cod_circle_filled or wezterm.nerdfonts.cod_circle_outline,
+    bookmark.name,
+    tabs,
+    cwd or ""
+  )
+end
+
+-- 削除の項目の id (workspace の名前と重ならないもの)
+local DELETE_ID = "<delete bookmarks>"
+
+local function delete_selector(window, pane, list)
+  local choices = {}
+  for _, bookmark in ipairs(list) do
+    table.insert(choices, { id = bookmark.name, label = bookmark_label(bookmark) })
+  end
+  window:perform_action(
+    wezterm.action.InputSelector({
+      title = "削除するブックマーク (workspace は閉じない)",
+      choices = choices,
+      action = wezterm.action_callback(function(win, p, name)
+        if not name then
+          return
+        end
+        local current = read_bookmarks()
+        local i = find_bookmark(current, name)
+        if i then
+          table.remove(current, i)
+          write_bookmarks(current)
+          toast(win, name .. " のブックマークを削除しました")
+        end
+      end),
+    }),
+    pane
+  )
+end
+
+-- 一覧から開く。開いている workspace には ● が付く
+function M.bookmarks_action()
+  return wezterm.action_callback(function(window, pane)
+    if is_secondary() then
+      return secondary_toast(window)
+    end
+    local list = read_bookmarks()
+    if #list == 0 then
+      return toast(window, "ブックマークはまだありません (leader + B で今の workspace を登録)")
+    end
+    local choices = {}
+    for _, bookmark in ipairs(list) do
+      table.insert(choices, { id = bookmark.name, label = bookmark_label(bookmark) })
+    end
+    table.insert(choices, { id = DELETE_ID, label = wezterm.nerdfonts.cod_trash .. " ブックマークを削除..." })
+    window:perform_action(
+      wezterm.action.InputSelector({
+        title = "Workspace bookmarks",
+        choices = choices,
+        fuzzy = true,
+        action = wezterm.action_callback(function(win, p, name)
+          if name == DELETE_ID then
+            delete_selector(win, p, list)
+          elseif name then
+            M.switch_to(win, p, name)
+          end
+        end),
+      }),
+      pane
+    )
+  end)
+end
+
+-- name を閉じたあとに切り替える先。ほかに開いている workspace が無ければ、
+-- 登録していない名前で新しく作る (登録済みの名前で作ると、自動保存でブックマークが上書きされる)
+local function fallback_workspace(name)
+  for _, open_name in ipairs(mux.get_workspace_names()) do
+    if open_name ~= name then
+      return open_name
+    end
+  end
+  local list = read_bookmarks()
+  local candidate, n = "default", 1
+  while candidate == name or find_bookmark(list, candidate) do
+    n = n + 1
+    candidate = "default-" .. n
+  end
+  return candidate
+end
+
+local function close_workspace(window, pane, name)
+  if not bookmark_workspace(name) then
+    return toast(window, name .. " をブックマークできなかったので閉じません (Debug Overlay を参照)", 5000)
+  end
+  local pane_ids = {}
+  for _, mux_window in ipairs(mux.all_windows()) do
+    if mux_window:get_workspace() == name then
+      for _, tab in ipairs(mux_window:tabs()) do
+        for _, p in ipairs(tab:panes()) do
+          table.insert(pane_ids, p:pane_id())
+        end
+      end
+    end
+  end
+  wezterm.GLOBAL.workspace_session_closing = name
+  -- 表示中の workspace の pane を消すと GUI の window ごと閉じてしまうので、先に切り替える
+  if window:active_workspace() == name then
+    window:perform_action(wezterm.action.SwitchToWorkspace({ name = fallback_workspace(name) }), pane)
+  end
+  -- Lua から pane を閉じる API が無いので wezterm cli を使う (この WezTerm の
+  -- WEZTERM_UNIX_SOCKET を受け継ぐので、この WezTerm の pane が閉じる)。
+  -- 切り替えが終わってから閉じる
+  local cli = wezterm.executable_dir .. "\\wezterm.exe"
+  wezterm.time.call_after(0.5, function()
+    for _, id in ipairs(pane_ids) do
+      local ok, _, stderr = wezterm.run_child_process({ cli, "cli", "kill-pane", "--pane-id", tostring(id) })
+      if not ok then
+        wezterm.log_warn("workspace_session: pane " .. id .. " を閉じられない: " .. tostring(stderr))
+      end
+    end
+    -- pane が消え終わってから、state.json からもこの workspace を消す
+    wezterm.time.call_after(2, function()
+      wezterm.GLOBAL.workspace_session_closing = nil
+      M.save(true)
+    end)
+  end)
+  toast(window, name .. " をブックマークして閉じました (leader + b で開き直せます)")
+end
+
+function M.close_workspace_action()
+  return wezterm.action_callback(function(window, pane)
+    if is_secondary() then
+      return secondary_toast(window)
+    end
+    local name = window:active_workspace()
+    window:perform_action(
+      wezterm.action.InputSelector({
+        title = name .. " をブックマークして閉じる",
+        choices = {
+          {
+            id = "close",
+            label = "閉じる (nvim の保存していない変更は、開き直したときにスワップファイルから復元する)",
+          },
+          { id = "cancel", label = "やめる" },
+        },
+        action = wezterm.action_callback(function(win, p, id)
+          if id == "close" then
+            close_workspace(win, p, name)
+          end
+        end),
+      }),
+      pane
+    )
+  end)
 end
 
 ----------------------------------------------------
