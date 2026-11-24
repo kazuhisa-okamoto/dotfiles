@@ -51,6 +51,18 @@ local rename_workspace = act.PromptInputLine({
   end),
 })
 
+-- 背景のぼかし (win32_system_backdrop) のあるなしを、この window だけ切り替える
+-- 透過 (window_background_opacity) はそのまま
+local toggle_blur = wezterm.action_callback(function(window)
+  local overrides = window:get_config_overrides() or {}
+  if overrides.win32_system_backdrop then
+    overrides.win32_system_backdrop = nil
+  else
+    overrides.win32_system_backdrop = "Disable"
+  end
+  window:set_config_overrides(overrides)
+end)
+
 return {
   keys = {
     {
@@ -103,6 +115,8 @@ return {
 
     -- 画面フルスクリーン切り替え
     { key = "Enter", mods = "ALT", action = act.ToggleFullScreen },
+    -- 背景のぼかしの切り替え
+    { key = "g", mods = "LEADER", action = toggle_blur },
 
     -- 画面スクロール
     -- プロンプト単位で移動 (oh-my-posh の shell_integration が必要)
