@@ -106,3 +106,15 @@ code --list-extensions > vscode\extensions.txt
 Tablacus add-ons are downloaded from https://tablacus.github.io/TablacusExplorerAddons/ into the app's `addons` folder. scoop keeps only the app's `config` folder across updates, so run `bootstrap.ps1` again after `scoop update tablacus-explorer` to put the add-ons back.
 
 Besides the lists, `bootstrap.ps1` adds a `te64` shim for Tablacus Explorer (its scoop manifest only creates `te64.exe.exe`) and sets the user environment variable `CLAUDE_CODE_GIT_BASH_PATH` to scoop's Git Bash, so Claude Code does not depend on a Git installed under `C:\Program Files`. It also sets `YAZI_FILE_ONE` to the `file.exe` that comes with scoop's Git: yazi runs `file -bL --mime-type` to tell a file's type before opening it, and scoop's own `file` (`main/file`) does not accept `-L`, so without this yazi opens folders but not files. Both variables are left as they are when already set.
+
+## Tablacus Explorer settings
+
+`bootstrap.ps1` copies `addons.xml` (which add-ons are enabled), `window.xml` (general options) and `key.xml` (key bindings) from `tablacus\` into the app's `config` folder. They are copies, not links, because Tablacus rewrites these files. An existing file is kept as `<name>.bak.<yyyyMMdd-HHmmss>`. A file is copied again only after it changes in the repository, so changes made in Tablacus stay until then. Close Tablacus first; while it is running the copy is skipped with a warning.
+
+Menus and favorites (`menus.xml`), the window layout and the history are not included, because they hold personal folder paths.
+
+To refresh the files from the current PC:
+
+```powershell
+'addons.xml', 'window.xml', 'key.xml' | ForEach-Object { Copy-Item "$HOME\scoop\persist\tablacus-explorer\config\$_" tablacus\ }
+```

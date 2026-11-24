@@ -17,6 +17,8 @@
     - Points Claude Code at scoop's Git Bash.
     - Points yazi at the file command of scoop's Git (YAZI_FILE_ONE), since
       scoop's own file does not accept the options yazi uses.
+    - Copies the Tablacus Explorer settings in tablacus\ into its config folder,
+      keeping a backup, when they have changed since the last copy.
 
     Nothing already installed is updated or removed.
     It runs on Windows PowerShell 5.1, since pwsh itself comes from scoop.
@@ -222,6 +224,74 @@ function Install-TablacusAddons {
     }
 }
 
+function Copy-TablacusSettings {
+    param([string[]]$names)
+
+    # Tablacus rewrites its settings itself, so they are copied, not linked.
+    # The contents copied last are kept next to the config folder, and a file
+    # is copied again only when the repository's version has changed since, so
+    # running this script again does not undo changes made in Tablacus.
+    $scoopdir = if ($env:SCOOP) { $env:SCOOP } else { Join-Path $env:USERPROFILE "scoop" }
+    $appdir = Join-Path $scoopdir "apps\tablacus-explorer\current"
+    $configdir = Join-Path $appdir "config"
+    $applieddir = Join-Path $scoopdir "persist\tablacus-explorer\dotfiles-applied"
+
+    if (-not $dryrun -and -not (Test-Path $appdir)) {
+        Write-Warning "Tablacus Explorer not found; skipping its settings"
+        return
+    }
+
+    # git may change line endings, so they are ignored when comparing.
+    $read = {
+        param($path)
+        if (Test-Path -LiteralPath $path) { [IO.File]::ReadAllText($path).Replace("`r`n", "`n") }
+    }
+
+    $pending = @()
+    foreach ($name in $names) {
+        $source = Join-Path $reporoot "tablacus\$name"
+        if (-not (Test-Path -LiteralPath $source)) {
+            Write-Warning "tablacus setting not found: $source"
+            continue
+        }
+        $wanted = & $read $source
+        $current = & $read (Join-Path $configdir $name)
+        $applied = & $read (Join-Path $applieddir $name)
+        if ($null -ne $current -and $applied -ceq $wanted) {
+            continue
+        }
+        $pending += @{ name = $name; source = $source; same = ($current -ceq $wanted); exists = ($null -ne $current) }
+    }
+
+    # Tablacus writes its settings back when it closes.
+    if (@($pending | Where-Object { -not $_.same }).Count -gt 0 -and
+        (Get-Process -Name TE64, TE32 -ErrorAction SilentlyContinue)) {
+        Write-Warning "Tablacus Explorer is running; close it and run this script again to copy its settings"
+        return
+    }
+
+    foreach ($item in $pending) {
+        $target = Join-Path $configdir $item.name
+        if (-not $item.same) {
+            if ($item.exists) {
+                $backup = "$target.bak." + (Get-Date -Format "yyyyMMdd-HHmmss")
+                Write-Host "backup existing: $target -> $backup" -ForegroundColor Yellow
+                if (-not $dryrun) {
+                    Copy-Item -LiteralPath $target -Destination $backup -ErrorAction Stop
+                }
+            }
+            Write-Host "copy tablacus setting: $($item.name)"
+        }
+        if (-not $dryrun) {
+            New-Item -ItemType Directory -Path $configdir, $applieddir -Force | Out-Null
+            if (-not $item.same) {
+                Copy-Item -LiteralPath $item.source -Destination $target -Force -ErrorAction Stop
+            }
+            Copy-Item -LiteralPath $item.source -Destination (Join-Path $applieddir $item.name) -Force
+        }
+    }
+}
+
 function Set-ClaudeGitBashPath {
     # Claude Code otherwise looks for C:\Program Files\Git\bin\bash.exe.
     $scoopdir = if ($env:SCOOP) { $env:SCOOP } else { Join-Path $env:USERPROFILE "scoop" }
@@ -383,6 +453,7 @@ foreach ($app in $apps) {
 
 Add-Te64Shim
 Install-TablacusAddons (Read-ListFile "packages\tablacus-addons.txt")
+Copy-TablacusSettings @("addons.xml", "window.xml", "key.xml")
 Set-ClaudeGitBashPath
 Set-YaziFileOne
 
