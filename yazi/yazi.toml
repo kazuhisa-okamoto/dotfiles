@@ -1,3 +1,7 @@
+[mgr]
+# 一覧の右端に更新日時を常に表示する (m m / m s などで一時的に切り替えられる)
+linemode = "mtime"
+
 [opener]
 open_nvim = [
 	{ run = 'nvim "%s"', block = true, desc = "Open in Neovim", for = "windows" }
