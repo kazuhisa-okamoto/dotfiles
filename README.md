@@ -7,7 +7,7 @@ Personal Windows configuration for Neovim, PowerShell, Oh My Posh, WezTerm, VSCo
 - Windows 10/11
 - VS Code (installed separately, e.g. `winget install Microsoft.VisualStudioCode`)
 
-Everything else (scoop, Git, PowerShell 7, Neovim, WezTerm, ...) is installed by `bootstrap.ps1`.
+scoop and Git are installed by hand in step 1 below, because they are needed to clone this repository. Everything else (PowerShell 7, Neovim, WezTerm, ...) is installed by `bootstrap.ps1`.
 
 ## Install
 
@@ -21,7 +21,7 @@ git clone https://github.com/kazuhisa-okamoto/dotfiles.git
 cd dotfiles
 ```
 
-2. Run `bootstrap.ps1` as a normal user (scoop refuses to run its installer as administrator). It installs scoop itself if it is missing, the scoop buckets and apps in `packages/scoop-buckets.txt` and `packages/scoop-apps.txt`, and the packages in `packages/pipx.txt` and `packages/npm.txt`. Anything already installed is skipped.
+2. Run `bootstrap.ps1` as a normal user (scoop refuses to run its installer as administrator). It installs the scoop buckets and apps in `packages/scoop-buckets.txt` and `packages/scoop-apps.txt`, and the packages in `packages/pipx.txt` and `packages/npm.txt`. Anything already installed is skipped. scoop and Git are installed too if they are missing (for example when the repository was downloaded as a ZIP).
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1 -DryRun
