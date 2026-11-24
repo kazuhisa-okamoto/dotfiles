@@ -89,7 +89,7 @@ code --list-extensions > vscode\extensions.txt
 
 ## Yazi plugins
 
-`install.ps1` runs `ya pkg install` after linking `yazi/package.toml`, which installs the plugins listed there.
+`install.ps1` runs `ya pkg install` after linking `yazi/package.toml`, which installs the plugins listed there. Edits made directly to an installed plugin are discarded. It then replaces `ya.mgr_emit`, which yazi 26.9.1 removed, with `ya.emit` in the plugins that still call it. After a `git pull` that changes `yazi/package.toml`, or after updating yazi, run `install.ps1` again.
 
 ## Package lists
 

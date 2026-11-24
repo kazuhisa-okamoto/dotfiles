@@ -623,11 +623,44 @@ function Install-YaziPackages {
         return
     }
 
-    Write-Host "install yazi packages: ya pkg install"
+    # ya stops when an installed plugin differs from package.toml: after the
+    # patch below, and also when package.toml moves to another revision.
+    # --discard replaces it instead; older versions of ya do not have it.
+    $installArgs = @("pkg", "install")
+    if ((ya pkg install --help | Out-String) -match '--discard') {
+        $installArgs += "--discard"
+    }
+
+    Write-Host "install yazi packages: ya $installArgs"
     if (-not $dryrun) {
-        ya pkg install
+        ya @installArgs
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "ya pkg install failed"
+        }
+    }
+
+    Repair-YaziPlugins "$homedir\AppData\Roaming\yazi\config\plugins"
+}
+
+function Repair-YaziPlugins {
+    # yazi 26.9.1 no longer has ya.mgr_emit, which bookmarks and relative-motions
+    # still call (their fixes, bookmarks.yazi #66 and relative-motions.yazi #32,
+    # are not merged). ya.emit takes the same arguments. It cannot be done in
+    # init.lua: a plugin's entry does not see what init.lua adds to ya.
+    param([string]$pluginsDir)
+
+    foreach ($file in @(Get-ChildItem "$pluginsDir\*.yazi\main.lua" -ErrorAction SilentlyContinue)) {
+        $text = [IO.File]::ReadAllText($file.FullName)
+        $fixed = $text -creplace '\bya\.mgr_emit\b', 'ya.emit'
+        if ($fixed -ceq $text) {
+            continue
+        }
+
+        Write-Host "patch yazi plugin: $($file.Directory.Name) (ya.mgr_emit -> ya.emit)"
+        if (-not $dryrun) {
+            # ya makes the files it installs read-only.
+            $file.IsReadOnly = $false
+            [IO.File]::WriteAllText($file.FullName, $fixed, [Text.UTF8Encoding]::new($false))
         }
     }
 }
