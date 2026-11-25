@@ -401,7 +401,7 @@ function fcdg {
     )
     $roots = Resolve-PathArg $mydirs $Path
 
-    $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
+    $repos = fd "^\.git$" $roots --hidden --type d |
          ForEach-Object { Split-Path $_ -Parent } |
          Sort-Object
     $selected = $repos |
@@ -493,7 +493,7 @@ function fcodeg {
         [Parameter(Position=0)][string]$Path
     )
     $roots = Resolve-PathArg $mydirs $Path
-    $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
+    $repos = fd "^\.git$" $roots --hidden --type d |
         ForEach-Object { Split-Path $_ -Parent }
     $repos |
         fzf --header "Open Repository (VS Code)" --no-sort |
@@ -506,7 +506,7 @@ function fvig {
         [Parameter(Position=0)][string]$Path
     )
     $roots = Resolve-PathArg $mydirs $Path
-    $repos = fd "^\.git$" $roots --hidden --type d --max-depth 5 |
+    $repos = fd "^\.git$" $roots --hidden --type d |
         ForEach-Object { Split-Path $_ -Parent }
     $repos |
         fzf --header "Open Repository (Neovim)" --no-sort |
