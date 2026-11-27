@@ -1,6 +1,7 @@
 local wezterm = require("wezterm")
 local act = wezterm.action
 local claude_status = require("claude_status")
+local tab_bar = require("tab_bar")
 
 -- キーテーブル (モード) ごとの表示名と背景色 (Tokyo Night の配色)
 local key_table_labels = {
@@ -15,7 +16,7 @@ local WORKSPACE_BG = "#bb9af7"
 local WORKSPACE_FG = "#1a1b26"
 
 -- Show which key table is active, the Claude Code states and the workspace name in the status area
-wezterm.on("update-right-status", function(window, pane)
+local function right_status_cells(window, pane, compact)
   local cells = {}
   local name = window:active_key_table()
   if name then
@@ -27,7 +28,7 @@ wezterm.on("update-right-status", function(window, pane)
     table.insert(cells, "ResetAttributes")
     table.insert(cells, { Text = " " })
   end
-  for _, cell in ipairs(claude_status.status_cells(window, pane)) do
+  for _, cell in ipairs(claude_status.status_cells(window, pane, compact)) do
     table.insert(cells, cell)
   end
   -- 右端に、この window の workspace 名
@@ -38,7 +39,23 @@ wezterm.on("update-right-status", function(window, pane)
     string.format(" %s %s ", wezterm.nerdfonts.cod_window, window:active_workspace())
   )
   table.insert(cells, { Text = " " })
-  window:set_right_status(wezterm.format(cells))
+  return cells
+end
+
+wezterm.on("update-right-status", function(window, pane)
+  local cells = right_status_cells(window, pane, false)
+  local width = tab_bar.text_width(cells)
+  -- タブが多くてタブ名がほとんど入らなくなるときは、Claude の状態を短く表示する
+  if not tab_bar.status_fits(window, width) then
+    cells = right_status_cells(window, pane, true)
+    width = tab_bar.text_width(cells)
+  end
+  local text = wezterm.format(cells)
+  if tab_bar.record(window, width) then
+    -- ウィンドウの幅が変わった。同じ文字列だとタブバーが作り直されないので、いったん空にする
+    window:set_right_status("")
+  end
+  window:set_right_status(text)
 end)
 
 -- workspaceの名前変更

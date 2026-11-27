@@ -125,7 +125,8 @@ function M.add_segment(cells, bg, fg, text)
 end
 
 -- update-right-status から毎回呼ぶ。見ている pane の完了を既読にして、件数の表示を返す
-function M.status_cells(window, pane)
+-- compact: タブが多くて幅が足りないときに、状態の名前 (確認待ち など) を省いてアイコンと件数だけにする
+function M.status_cells(window, pane, compact)
   local items = collect()
   local counts = {}
   for _, item in ipairs(items) do
@@ -140,7 +141,9 @@ function M.status_cells(window, pane)
     return cells
   end
   -- 先頭に、動いている Claude Code の総数
-  M.add_segment(cells, HEADER_BG, HEADER_FG, string.format(" %s Claude %d ", nf.md_robot, #items))
+  local header = compact and string.format(" %s %d ", nf.md_robot, #items)
+    or string.format(" %s Claude %d ", nf.md_robot, #items)
+  M.add_segment(cells, HEADER_BG, HEADER_FG, header)
   for _, state in ipairs(state_order) do
     -- 待機は数えても仕方がないので出さない
     if state ~= "idle" and counts[state] then
@@ -153,7 +156,8 @@ function M.status_cells(window, pane)
         cells,
         states[state].color,
         CHIP_FG,
-        string.format(" %s %s %d ", glyph, states[state].label, counts[state])
+        compact and string.format(" %s %d ", glyph, counts[state])
+          or string.format(" %s %s %d ", glyph, states[state].label, counts[state])
       )
     end
   end

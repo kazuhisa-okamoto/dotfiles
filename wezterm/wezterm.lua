@@ -40,10 +40,18 @@ config.hide_tab_bar_if_only_one_tab = false
 -- falseにするとタブバーの透過が効かなくなる
 -- config.use_fancy_tab_bar = false
 
--- タブバーの透過
+local tab_bar = require("tab_bar")
+
 config.window_frame = {
+  -- タブバーの透過
   inactive_titlebar_bg = "none",
   active_titlebar_bg = "none",
+  -- 本文と同じ等幅のフォントにして、タブとステータスの幅を文字数で見積もれるようにする (tab_bar.lua)
+  font = wezterm.font_with_fallback({
+    { family = tab_bar.FONT_FAMILY, weight = "Bold" },
+    "Meiryo",
+  }),
+  font_size = tab_bar.FONT_SIZE,
 }
 
 -- タブ同士の境界線を非表示
@@ -68,7 +76,32 @@ wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_wid
     foreground = "#FFFFFF"
   end
   local edge_foreground = background
-  local title = "   " .. wezterm.truncate_right(tab.active_pane.title, max_width - 1) .. "   "
+  -- 右側のステータスに重ならない幅 (左右の三角を含む)
+  local width = tab_bar.tab_text_width(tab, tabs, max_width)
+  local name = tab.active_pane.title
+  local name_width = wezterm.column_width(name)
+  -- 三角の内側の空白。名前が収まらないときは空白を減らしてから名前を切る
+  local padding = 1
+  for p = 3, 2, -1 do
+    if 2 + 2 * p + name_width <= width then
+      padding = p
+      break
+    end
+  end
+  if width < 2 + 2 * padding + 1 then
+    padding = 0
+  end
+  local name_room = width - 2 - 2 * padding
+  if name_room < 1 then
+    -- 三角も置けないほど狭いときは名前だけにする
+    return {
+      { Background = { Color = background } },
+      { Foreground = { Color = foreground } },
+      { Text = wezterm.truncate_right(name, width) },
+    }
+  end
+  local spaces = string.rep(" ", padding)
+  local title = spaces .. wezterm.truncate_right(name, name_room) .. spaces
   return {
     { Background = { Color = edge_background } },
     { Foreground = { Color = edge_foreground } },
