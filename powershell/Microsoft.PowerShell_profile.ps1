@@ -96,25 +96,16 @@ function Set-Location {
 
     Microsoft.PowerShell.Management\Set-Location @PSBoundParameters
     Send-TerminalCwd
-    ls
+    ls -Limit $cd_ls_limit
 }
+# cd のあとの ls で表示する最大件数 (ファイルが多いディレクトリで cd が遅くならないように)
+$cd_ls_limit = 200
 
 # lsコマンド
+# 表示幅: 0xFF より大きい文字 (全角など) を 2、それ以外を 1 として数える
 function Get-DisplayWidth($s) {
-    $w = 0
     $s = [string]$s
-    foreach ($ch in $s.ToCharArray()) {
-        $w += if ([int][char]$ch -gt 255) { 2 } else { 1 }
-    }
-    return $w
-}
-function Format-DisplayRight($s, $width) {
-    $current = Get-DisplayWidth $s
-    $pad = $width - $current
-    if ($pad -gt 0) {
-        return $s + (' ' * $pad)
-    }
-    return $s
+    return $s.Length + [regex]::Matches($s, '[^\u0000-ÿ]').Count
 }
 Remove-Item Alias:ls -Force -ErrorAction SilentlyContinue
 function ls {
@@ -122,81 +113,102 @@ function ls {
         [Parameter(Position=0)]
         [string]$Path = ".",
         [switch]$a,
-        [switch]$l
+        [switch]$l,
+        # 表示する最大件数 (0 は全件)
+        [int]$Limit = 0
     )
 
-    $show_all = $a.IsPresent
-    $detail   = $l.IsPresent
+    $gci_args = @{ Path = $Path }
+    if ($a.IsPresent) { $gci_args.Force = $true }
 
-    $items = if ($show_all) {
-        Get-ChildItem -Path $Path -Force
+    # Limit があるときは Limit + 1 件で列挙を打ち切る (超えたかどうかだけ分かればよい)
+    $items = @(if ($Limit -gt 0) {
+        Get-ChildItem @gci_args | Select-Object -First ($Limit + 1)
     } else {
-        Get-ChildItem -Path $Path
-    }
+        Get-ChildItem @gci_args
+    })
+    $truncated = $Limit -gt 0 -and $items.Count -gt $Limit
+    if ($truncated) { $items = $items[0..($Limit - 1)] }
+    $truncated_message = "... showing the first $Limit entries (run ls to see all)"
 
     # 詳細表示
-    if ($detail) {
-    	$items | Format-Table Mode, LastWriteTime, Length,
-       	    @{Label="Name"; Expression={
+    if ($l.IsPresent) {
+        $table = $items | Format-Table Mode, LastWriteTime, Length,
+            @{Label="Name"; Expression={
                 if ($_.PSIsContainer) {
                     "$($PSStyle.Foreground.Blue)$($_.Name)$($PSStyle.Reset)"
                 } else {
                     $_.Name
                 }
         }}
+        if ($truncated) {
+            $table | Out-Host
+            Write-Host $truncated_message -ForegroundColor DarkGray
+        } else {
+            $table
+        }
         return
     }
 
     # 通常表示
-    if ($items.Count -eq 0) { return }
-    
-    $names = $items.Name
-    $termWidth = [Console]::WindowWidth - 1
-    $count = $names.Count
-    
-    for ($cols = $count; $cols -ge 1; $cols--) {
-    
-        $rows = [Math]::Ceiling($count / $cols)
-    
-        # 列ごとの最大幅を計算
-        $colWidths = @()
-    
-        for ($c = 0; $c -lt $cols; $c++) {
-            $max = 0
-            for ($r = 0; $r -lt $rows; $r++) {
-                $i = $c * $rows + $r
-                if ($i -ge $count) { continue }
-    
-                $len = Get-DisplayWidth($names[$i])
-                if ($len -gt $max) { $max = $len }
-            }
-            $colWidths += $max + 2
-        }
-    
-        $totalWidth = ($colWidths | Measure-Object -Sum).Sum
-    
-        if ($totalWidth -le $termWidth) {
-            break
-        }
+    $count = $items.Count
+    if ($count -eq 0) { return }
+
+    # 名前ごとの表示幅は最初に 1 回だけ数える
+    $widths = [int[]]::new($count)
+    $min_width = [int]::MaxValue
+    for ($i = 0; $i -lt $count; $i++) {
+        $widths[$i] = Get-DisplayWidth $items[$i].Name
+        if ($widths[$i] -lt $min_width) { $min_width = $widths[$i] }
     }
-    
-    # 表示
+
+    $term_width = 79
+    try { $term_width = [Console]::WindowWidth - 1 } catch {}
+    if ($term_width -lt 1) { $term_width = 79 }
+
+    # どの列も (いちばん短い名前の幅 + 2) 以上になるので、列数はそれで割った数より多くならない
+    $cols = [int][Math]::Max(1, [Math]::Min($count, [Math]::Floor($term_width / ($min_width + 2))))
+    while ($true) {
+        $rows = [int][Math]::Ceiling($count / $cols)
+        $col_widths = [int[]]::new($cols)
+        $total_width = 0
+        for ($c = 0; $c -lt $cols; $c++) {
+            $start = $c * $rows
+            if ($start -ge $count) { break }
+            $end = [Math]::Min($start + $rows, $count)
+            $max = 0
+            for ($i = $start; $i -lt $end; $i++) {
+                if ($widths[$i] -gt $max) { $max = $widths[$i] }
+            }
+            $col_widths[$c] = $max + 2
+            $total_width += $max + 2
+            if ($total_width -gt $term_width) { break }
+        }
+        if ($total_width -le $term_width -or $cols -eq 1) { break }
+        $cols--
+    }
+
+    # 表示 (まとめて 1 回で書き出す。ディレクトリは明るい青 = Write-Host -ForegroundColor Blue と同じ色)
+    $esc = [char]27
+    $sb = [System.Text.StringBuilder]::new()
     for ($r = 0; $r -lt $rows; $r++) {
         for ($c = 0; $c -lt $cols; $c++) {
             $i = $c * $rows + $r
-            if ($i -ge $count) { continue }
+            if ($i -ge $count) { break }
 
             $item = $items[$i]
-            $width = $colWidths[$c]
-            $text = Format-DisplayRight $item.Name $width
-    
+            $text = $item.Name + (' ' * [Math]::Max(0, $col_widths[$c] - $widths[$i]))
             if ($item.PSIsContainer) {
-                Write-Host $text -NoNewline -ForegroundColor Blue
+                [void]$sb.Append("${esc}[94m$text${esc}[0m")
             } else {
-                Write-Host $text -NoNewline
+                [void]$sb.Append($text)
             }
         }
-        Write-Host ""
+        [void]$sb.Append("`n")
+    }
+    Write-Host $sb.ToString() -NoNewline
+    if ($truncated) {
+        Write-Host $truncated_message -ForegroundColor DarkGray
     }
 }
 
