@@ -36,7 +36,7 @@ local function right_status_cells(window, pane, compact)
     cells,
     WORKSPACE_BG,
     WORKSPACE_FG,
-    string.format(" %s %s ", wezterm.nerdfonts.cod_window, window:active_workspace())
+    string.format("%s %s", wezterm.nerdfonts.cod_window, window:active_workspace())
   )
   table.insert(cells, { Text = " " })
   return cells

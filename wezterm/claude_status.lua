@@ -109,8 +109,21 @@ local HEADER_FG = "#c0caf5"
 -- 状態の札の文字色 (ターミナルの背景色と同じ)
 local CHIP_FG = "#1a1b26"
 
+-- 札の中で、斜めの端と文字のあいだに入れる空白
+local SEGMENT_PADDING = ""
+-- 札と札のあいだの空白 (斜めの端どうしのあいだに、これに加えて1文字分ほどの隙間ができる)
+local SEGMENT_GAP = ""
+
+-- 札と札のあいだを空ける
+function M.add_gap(cells)
+  if SEGMENT_GAP ~= "" then
+    table.insert(cells, { Text = SEGMENT_GAP })
+  end
+end
+
 -- keybinds.lua の workspace 名の札でも使う
 function M.add_segment(cells, bg, fg, text)
+  text = SEGMENT_PADDING .. text .. SEGMENT_PADDING
   table.insert(cells, { Background = { Color = "none" } })
   table.insert(cells, { Foreground = { Color = bg } })
   table.insert(cells, { Text = LEFT_EDGE })
@@ -141,8 +154,8 @@ function M.status_cells(window, pane, compact)
     return cells
   end
   -- 先頭に、動いている Claude Code の総数
-  local header = compact and string.format(" %s %d ", nf.md_robot, #items)
-    or string.format(" %s Claude %d ", nf.md_robot, #items)
+  local header = compact and string.format("%s %d", nf.md_robot, #items)
+    or string.format("%s Claude %d", nf.md_robot, #items)
   M.add_segment(cells, HEADER_BG, HEADER_FG, header)
   for _, state in ipairs(state_order) do
     -- 待機は数えても仕方がないので出さない
@@ -151,17 +164,17 @@ function M.status_cells(window, pane, compact)
       if state == "running" then
         glyph = SPINNER[os.time() % #SPINNER + 1]
       end
-      table.insert(cells, { Text = " " })
+      M.add_gap(cells)
       M.add_segment(
         cells,
         states[state].color,
         CHIP_FG,
-        compact and string.format(" %s %d ", glyph, counts[state])
-          or string.format(" %s %s %d ", glyph, states[state].label, counts[state])
+        compact and string.format("%s %d", glyph, counts[state])
+          or string.format("%s %s %d", glyph, states[state].label, counts[state])
       )
     end
   end
-  table.insert(cells, { Text = " " })
+  M.add_gap(cells)
   return cells
 end
 
